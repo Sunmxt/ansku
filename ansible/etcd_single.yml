@@ -1,0 +1,14 @@
+---
+- name: Deploy single etcd node.
+  hosts: etcd_single
+  become_user: "root"
+  become: yes
+
+  vars: 
+      tls_root: "{{ etcd_data_path }}/tls"
+      etcd_storage_root:  "{{ etcd_data_path }}/data"
+
+  roles:
+    - docker_engine
+    - etcd_certs
+    - etcd_single

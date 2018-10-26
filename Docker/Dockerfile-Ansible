@@ -1,0 +1,20 @@
+FROM python:3.6.6-alpine3.7
+
+
+ARG ANSIBLE_VERSION=2.7.0
+
+RUN set -xe;\
+    sed -Ei "s/dl-cdn\.alpinelinux\.org/mirrors.tuna.tsinghua.edu.cn/g" /etc/apk/repositories;\
+    pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple; \
+    echo [easy_install] >> ~/.pydistutils.cfg ;\
+    echo index-url=https://pypi.tuna.tsinghua.edu.cn/simple >> ~/.pydistutils.cfg; \
+    mkdir /apk-cache; \
+    mkdir /pip-cache; \
+    apk add py-cffi libffi-dev openssl-dev musl-dev tzdata gettext vim sshpass openssh bash --cache-dir /apk-cache;  \
+    rm /etc/localtime; \
+    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime; \
+    apk add make gcc g++ linux-headers --cache-dir /apk-cache -t build-deps; \
+    pip install ansible==$ANSIBLE_VERSION pyOpenSSL docker-compose --cache-dir=/pip-cache; \
+    apk del build-deps; \
+    rm -rf /pip-cache; \
+    rm -rf /apk-cache; 

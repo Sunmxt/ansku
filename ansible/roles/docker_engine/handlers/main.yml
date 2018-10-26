@@ -1,0 +1,10 @@
+---
+- name: enable docker engine
+  systemd:
+      name: docker
+      enabled: yes
+
+- name: start docker engine
+  service:
+      name: docker
+      state: started

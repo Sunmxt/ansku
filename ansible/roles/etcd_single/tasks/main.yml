@@ -1,0 +1,23 @@
+---
+- name: Ensure data root exists.
+  file:
+      path: "{{ etcd_data_path }}"
+      owner: root
+      group: root
+      mode: 0644
+      state: directory
+
+
+- name: Ensure etcd storage root exists.
+  file:
+      path: "{{ etcd_storage_root }}"
+      owner: root
+      group: root
+      mode: 0644
+      state: directory
+
+- name: Generate docker-compose file.
+  template:
+      src: docker-compose.yml.j2
+      dest: "{{ etcd_data_path }}/docker-compose.yml"
+  notify: start single etcd node
