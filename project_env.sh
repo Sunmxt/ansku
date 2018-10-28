@@ -8,3 +8,5 @@ popd > /dev/null
 # Variables
 ANSIBLE_IMAGE_NAME=star_app_platform_ansible
 ANSIBLE_IMAGE_TAG=latest
+CLEAN_DNS_IMAGE_NAME=cleandns
+CLEAN_DNS_IMAGE_TAG=latest

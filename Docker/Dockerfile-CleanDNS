@@ -1,0 +1,25 @@
+FROM andyshinn/dnsmasq:2.78
+
+RUN set -xe;\
+    sed -Ei "s/dl-cdn\.alpinelinux\.org/mirrors.tuna.tsinghua.edu.cn/g" /etc/apk/repositories;\
+    mkdir /apk-cache;\
+    apk update --cache-dir /apk-cache; \
+    apk add supervisor tzdata gettext bash ipset --cache-dir /apk-cache;\
+    mkdir /data; cd /data;\
+    wget 'https://raw.githubusercontent.com/Sunmxt/AutoDnsmasq/master/list2dnsmasq'; \
+    chmod a+x list2dnsmasq;\
+    mv list2dnsmasq /bin/; \
+    rm -rf /apk-cache; \
+    rm /etc/localtime; \
+    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime;
+
+COPY Docker/CleanDNS/*.sh Docker/CleanDNS/*.conf /data/
+COPY Docker/CleanDNS/dnsmasq.d/static /data/dnsmasq.d/static
+COPY Docker/CleanDNS/dnsmasq.d/templates /data/dnsmasq.d/templates
+
+RUN set -xe; \
+    chmod a+x /data/*.sh
+
+
+ENTRYPOINT []
+CMD ["sh", "-c", "/data/start.sh"]

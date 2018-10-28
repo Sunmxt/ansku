@@ -1,0 +1,15 @@
+version: "3.2"
+services:
+    shadowsocks_local:
+        image: shadowsocks/shadowsocks-libev
+        ports:
+          - "{{ host_port }}:5353/{{ expose_protocol | default('tcp') }}"
+        volumes:
+          - type: bind
+            source: "{{ data_root }}"
+            target: "/etc/shadowsocks-libev"
+        restart: always
+        command:
+          - "/bin/sh"
+          - "-c"
+          - "exec ss-tunnel -c /etc/shadowsocks-libev/config.json"

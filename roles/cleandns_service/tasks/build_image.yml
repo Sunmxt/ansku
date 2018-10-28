@@ -1,0 +1,34 @@
+---
+- name: Ensure CleanDNS Docker path exists.
+  file:
+      path: "{{ cleandns_data_root }}/Docker"
+      owner: root
+      group: root
+      mode: 0755
+      state: directory
+
+
+- name: Ensure CleanDNS Docker data exists.
+  file:
+      path: "{{ cleandns_data_root }}/CleanDNS"
+      owner: root
+      group: root
+      mode: 0755
+      state: directory
+        
+
+- name: Upload Dockerfile.
+  copy:
+      src: "{{ playbook_dir }}/Docker/Dockerfile-CleanDNS"
+      dest: "{{ cleandns_data_root }}/Docker/Dockerfile-CleanDNS"
+
+- name: Upload CleanDNS build data.
+  copy:
+      src: "{{ playbook_dir }}/Docker/CleanDNS"
+      dest: "{{ cleandns_data_root }}/Docker/"
+
+- name: Generate docker-compose file
+  template:
+      src: docker-compose.yml.j2
+      dest: "{{ cleandns_data_root }}/docker-compose.yml"
+  notify: Compose CleanDNS
