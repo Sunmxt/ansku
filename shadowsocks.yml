@@ -1,0 +1,9 @@
+---
+- hosts: servers
+  name: Set up GFW-free network environment.
+  become: true
+  become_user: root
+
+  roles:
+    - docker_engine
+    - shadowsocks_libev

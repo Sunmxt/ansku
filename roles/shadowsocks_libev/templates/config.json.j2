@@ -3,10 +3,12 @@
     , "server_port" : "{{ server_port }}"
     , "local_address" : "0.0.0.0"
     , "local_port": "5353"
+    {% if mode == "tunnel" %}
     , "tunnel_address": "{{ tunnel_address }}:{{ tunnel_port }}"
+    {% endif %}
     , "password" : "{{ encrypt_password }}"
     , "method" : "{{ encrypt_method }}"
-    , "mode": "{{ tunnel_protocol }}"
+    , "mode": "{{ protocol }}"
     , "timeout" : 600
 }
 

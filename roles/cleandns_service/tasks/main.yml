@@ -1,14 +1,12 @@
 ---
 - set_fact:
-     cleandns_config_root: "{{ cleandns_data_root }}/config"
-     cleandns_log_root: "{{ cleandns_data_root }}/log"
-     listen_address: "{{ listen_address | default('127.0.0.1') }}"
-     listen_port: "{{ listen_port | default('5353') }}"
-     upstream_dns: "{{ upstream_dns | default('8.8.8.8') }}"
-     upstream_port: "{{ upstream_port | default('53') }}"
+      config_root: "{{ data_root }}/config"
+      log_root: "{{ data_root }}/log"
+      upstream_dns: "{{ upstream_dns | default('8.8.8.8') }}"
+      upstream_port: "{{ upstream_port | default('53') }}"
+      port_map_to: "{{ port_map_to | default('5354') }}"
 
-      
-- name: Ensure CleanDNS data path exists.
+- name: Ensure data path exists.
   file:
       path: "{{ data_root }}"
       owner: root
@@ -16,22 +14,63 @@
       mode: 0755
       state: directory
 
-- name: Ensure CleanDNS config path exists.
+- name: Ensure config path exists.
   file:
-      path: "{{ cleandns_config_root }}"
+      path: "{{ config_root }}"
       owner: root
       group: root
       mode: 0700
       state: directory
 
-- name: Ensure CleanDNS log path exists.
+- name: Ensure log path exists.
   file:
-      path: "{{ cleandns_log_root }}"
+      path: "{{ log_root }}"
       owner: root
       group: root
       mode: 0700
       state: directory
 
-- name: Preparing Docker Compose environment.
-  include_tasks: build_image.yml
-  
+- name: Ensure Build data directory exists.
+  file:
+      path: "{{ data_root }}/Docker"
+      owner: root
+      group: root
+      mode: 0755
+      state: directory
+
+
+- name: Upload Dockerfile.
+  copy:
+      src: "{{ playbook_dir }}/Docker/Dockerfile-CleanDNS"
+      dest: "{{ data_root }}/Docker/Dockerfile-CleanDNS"
+  notify:
+    - Compose CleanDNS down
+    - Compose CleanDNS
+
+- name: Upload CleanDNS build data.
+  copy:
+      src: "{{ playbook_dir }}/Docker/CleanDNS"
+      dest: "{{ data_root }}/Docker/"
+  notify:
+    - Compose CleanDNS down
+    - Compose CleanDNS
+
+
+- name: Generate DNS tunnel configure.
+  template:
+      src: config.json.j2
+      dest: "{{ data_root }}/tunnel.json"
+      mode: 0644
+      owner: root
+      group: root
+  notify:
+    - Compose CleanDNS down
+    - Compose CleanDNS
+
+- name: Generate compose file
+  template:
+      src: docker-compose.yml.j2
+      dest: "{{ data_root }}/docker-compose.yml"
+  notify:
+    - Compose CleanDNS down
+    - Compose CleanDNS

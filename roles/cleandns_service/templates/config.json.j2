@@ -1,0 +1,12 @@
+{
+    "server" : "{{ server_name }}"
+    , "server_port" : "{{ server_port }}"
+    , "local_address" : "127.0.0.1"
+    , "local_port": "{{ port_map_to }}"
+    , "tunnel_address": "{{ upstream_dns }}:{{ upstream_port }}"
+    , "password" : "{{ encrypt_password }}"
+    , "method" : "{{ encrypt_method }}"
+    , "mode": "udp_only"
+    , "timeout" : 600
+}
+

@@ -1,4 +1,9 @@
 ---
+- set_fact:
+      port: "{{ port | default('8098') }}"
+      mode: "{{ mode | default('local') }}"
+      protocol: "{{ protocol | default('tcp_and_udp') }}"
+
 - name: Ensure Shadowsocks config path exists.
   file:
       path: "{{ data_root }}"
@@ -11,9 +16,17 @@
   template:
       src: config.json.j2
       dest: "{{ data_root }}/config.json"
+      owner: root
+      group: root
+      mode: 0644
+  notify:
+    - Compose down
+    - Compose
 
 - name: Generate docker-compose file
   template:
       src: docker-compose.yml.j2
       dest: "{{ data_root }}/docker-compose.yml"
-  notify: start ss-local client
+  notify:
+    - Compose down
+    - Compose

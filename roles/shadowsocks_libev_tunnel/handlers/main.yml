@@ -1,5 +1,0 @@
----
-- name: start ss-local client
-  docker_service:
-      project_src: "{{ data_root }}"
-      state: present

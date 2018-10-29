@@ -1,0 +1,22 @@
+version: "3.2"
+services:
+    ss_service:
+        image: shadowsocks/shadowsocks-libev
+        ports:
+{% if protocol == 'udp_only' %}
+          - "{{ port }}:5353/udp"
+{% elif protocol == 'tcp_only' %}
+          - "{{ port }}:5353/tcp"
+{% else %}
+          - "{{ port }}:5353/tcp"
+          - "{{ port }}:5353/udp"
+{% endif %}
+        volumes:
+          - type: bind
+            source: "{{ data_root }}/config.json"
+            target: "/etc/shadowsocks-libev/config.json"
+        restart: always
+        command:
+          - "/bin/sh"
+          - "-c"
+          - "exec ss-{{ mode }} -c /etc/shadowsocks-libev/config.json"

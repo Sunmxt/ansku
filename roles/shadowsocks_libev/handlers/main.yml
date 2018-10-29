@@ -1,11 +1,11 @@
 ---
-- name: Compose CleanDNS down
+- name: Compose down
   docker_service:
       project_src: "{{ data_root }}"
       state: absent
       remove_images: all
 
-- name: Compose CleanDNS
+- name: Compose
   docker_service:
       project_src: "{{ data_root }}"
       state: present 
