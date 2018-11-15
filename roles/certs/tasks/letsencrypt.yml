@@ -1,0 +1,93 @@
+---
+- set_fact:
+    chain_cert: "{{ cert_root }}/chain.pem"
+    fullchain_cert: "{{ cert_root }}/fullchain.pem"
+    server_side_cert: "{{ cert_root }}/{{ issue_domain }}.crt"
+    cert_request: "{{ cert_root }}/{{ issue_domain }}.csr"
+    cert_key: "{{ cert_root }}/{{ issue_domain }}.key"
+
+
+- include_tasks: acme_account.yaml
+ 
+- name: Ensure cert root exists.
+  file:
+    path: "{{ cert_root }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: directory
+
+- stat:
+    path: "{{ cert_key }}"
+  register: domain_key
+
+- name: Create domain key
+  openssl_privatekey:
+    size: 4096
+    path: "{{ cert_key }}"
+  when: domain_key.stat.exists == False
+
+- name: Generate Domain CSR
+  openssl_csr:
+    path: "{{ cert_request }}"
+    privatekey_path: "{{ cert_key }}"
+    common_name: "{{ issue_domain }}"
+
+- name: Verify ACME Challenge method.
+  fail:
+    msg: "ACME Challenge method not allowed: {{ letsencrypt_challenge_method }}"
+  when: letsencrypt_challenge_method != 'dns-01'
+
+- name: Create challenge
+  letsencrypt:
+    account_key_src: "{{ acme_root }}/account.key"
+    csr: "{{ cert_request }}"
+    dest: "{{ server_side_cert }}"
+    chain_dest: "{{ chain_cert }}"
+    fullchain_dest: "{{ fullchain_cert }}"
+    account_email: "{{ account_email }}"
+    acme_directory: "{{ letsencrypt_acme_directory }}"
+    acme_version: "{{ letsencrypt_acme_version }}"
+    challenge: "{{ letsencrypt_challenge_method }}"
+    agreement: "{{ letsencrypt_agreement }}"
+    remaining_days: "{{ letsencrypt_remaining_days }}"
+  register: created_challenge
+
+- name: Wait for DNS record present.
+  include_tasks: wait_dns.yml
+  vars:
+    record_name: "{{ created_challenge['challenge_data'][issue_domain]['dns-01']['record'] }}"
+    record_value: "{{ created_challenge['challenge_data'][issue_domain]['dns-01']['resource_value'] }}"
+  when: letsencrypt_challenge_method == "dns-01"
+
+- name: Trigger challenge.
+  letsencrypt:
+    account_key_src: "{{ acme_root }}/account.key"
+    csr: "{{ cert_request }}"
+    dest: "{{ server_side_cert }}"
+    chain_dest: "{{ chain_cert }}"
+    fullchain_dest: "{{ fullchain_cert }}"
+    account_email: "{{ acme_email }}"
+    acme_directory: "{{ letsencrypt_acme_directory }}"
+    acme_version: "{{ letsencrypt_acme_version }}"
+    challenge: "{{ letsencrypt_challenge_method }}"
+    agreement: "{{ letsencrypt_agreement }}"
+    remaining_days: "{{ letsencrypt_remaining_days }}"
+    data: "{{ created_challenge }}"
+  when: created_challenge is changed
+  register: verify_challenge
+  when: letsencrypt_challenge_method == "dns-01"
+
+- name: Print Challenge result
+  debug:
+    var: verify_challenge
+
+- name: Succeed.
+  debug:
+    msg: Issued successfully.
+  when: "verify_challenge['authorizations'][issue_domain]['status'] == 'valid'"
+
+- name: Failed.
+  fail:
+    msg: Failed.
+  when: "verify_challenge['authorizations'][issue_domain]['status'] != 'valid'"

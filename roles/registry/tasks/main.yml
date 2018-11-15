@@ -1,0 +1,110 @@
+---
+- set_fact:
+    registry_cert_root: "{{ pki_root }}/registry"
+    acme_root: "{{ pki_root }}/acme"
+
+- set_fact:
+    chain_cert: "{{ registry_cert_root }}/chain.pem"
+    fullchain_cert: "{{ registry_cert_root }}/fullchain.pem"
+    
+        
+- name: Ensure registry cert root exists.
+  file:
+    path: "{{ registry_cert_root }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: directory
+
+- name: Ensure ACME root exists.
+  file:
+    path: "{{ acme_root }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: directory
+
+- stat: 
+    path: "{{ acme_root }}/account.key"
+  register: account_key
+
+- name: Ensure ACME account key exists.
+  openssl_privatekey:
+        size: 4096
+        path: "{{ acme_root }}/account.key"
+  when: account_key.stat.exists == False
+
+- stat:
+    path: "{{ registry_cert_root }}/domain.csr"
+  register: domain_key
+
+- name: Create domain key
+  openssl_privatekey:
+    size: 4096
+    path: "{{ registry_cert_root }}/domain.key"
+  when: domain_key.stat.exists == False
+
+- name: Generate Registry Domain CSR
+  openssl_csr:
+    path: "{{ registry_cert_root }}/domain.csr"
+    privatekey_path: "{{ registry_cert_root }}/domain.key"
+    common_name: "{{ registry_domain }}"
+
+- name: Verify ACME Challenge method.
+  fail:
+    msg: "ACME Challenge method not allowed: {{ letsencrypt_challenge_method }}"
+  when: letsencrypt_challenge_method != 'dns-01'
+
+- name: Create challenge
+  letsencrypt:
+    account_key_src: "{{ acme_root }}/account.key"
+    csr: "{{ registry_cert_root }}/domain.csr"
+    dest: "{{ registry_cert_root }}/domain.crt"
+    chain_dest: "{{ chain_cert }}"
+    fullchain_dest: "{{ fullchain_cert }}"
+    account_email: serivce@starstudio.org
+    acme_directory: "{{ letsencrypt_acme_directory }}"
+    acme_version: "{{ letsencrypt_acme_version }}"
+    challenge: "{{ letsencrypt_challenge_method }}"
+    agreement: "{{ letsencrypt_agreement }}"
+    remaining_days: "{{ letsencrypt_remaining_days }}"
+  register: created_challenge
+
+- name: Wait for DNS record present.
+  include_tasks: wait_dns.yml
+  vars:
+    record_name: "{{ created_challenge['challenge_data'][registry_domain]['dns-01']['record'] }}"
+    record_value: "{{ created_challenge['challenge_data'][registry_domain]['dns-01']['resource_value'] }}"
+  when: letsencrypt_challenge_method == "dns-01"
+
+- name: Trigger challenge.
+  letsencrypt:
+    account_key_src: "{{ acme_root }}/account.key"
+    csr: "{{ registry_cert_root }}/domain.csr"
+    dest: "{{ registry_cert_root }}/domain.crt"
+    chain_dest: "{{ chain_cert }}"
+    fullchain_dest: "{{ fullchain_cert }}"
+    account_email: serivce@starstudio.org
+    acme_directory: "{{ letsencrypt_acme_directory }}"
+    acme_version: "{{ letsencrypt_acme_version }}"
+    challenge: "{{ letsencrypt_challenge_method }}"
+    agreement: "{{ letsencrypt_agreement }}"
+    remaining_days: "{{ letsencrypt_remaining_days }}"
+    data: "{{ created_challenge }}"
+  when: created_challenge is changed
+  register: verify_challenge
+  when: letsencrypt_challenge_method == "dns-01"
+
+- name: Print Challenge result
+  debug:
+    var: verify_challenge
+
+- name: Succeed.
+  debug:
+    msg: Issued successfully.
+  when: "verify_challenge['authorizations'][registry_domain]['status'] == 'valid'"
+
+- name: Failed.
+  fail:
+    msg: Failed.
+  when: "verify_challenge['authorizations'][registry_domain]['status'] != 'valid'"

@@ -1,0 +1,21 @@
+---
+- set_fact:
+    acme_root: "{{ pki_root }}/acme"
+
+- name: Ensure ACME root exists.
+  file:
+    path: "{{ acme_root }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: directory
+
+- stat: 
+    path: "{{ acme_root }}/account.key"
+  register: account_key
+
+- name: Ensure ACME account key exists.
+  openssl_privatekey:
+        size: 4096
+        path: "{{ acme_root }}/account.key"
+  when: account_key.stat.exists == False
