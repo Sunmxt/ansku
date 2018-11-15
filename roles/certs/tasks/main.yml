@@ -1,0 +1,19 @@
+---
+- name: Ensure PKI Root exists.
+  file: 
+    path: "{{ pki_root }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: directory
+
+- name: Setup self-signed CA. 
+  include_tasks: ca.yml
+  vars:
+      issuer:
+          O: Starstudio APP Platform Authority
+          CN: "*.starapp.com"
+      crt_path: "{{ pki_root }}/ca.crt"
+      key_path: "{{ pki_root }}/ca.key"
+      csr_path: "{{ pki_root }}/ca.csr"
+

@@ -1,51 +1,40 @@
 ---
-- name: Ensure data root exists.
+- set_fact:
+    tls_root: "{{ pki_root }}/etcd"
+
+- name: Ensure etcd certs root exists.
   file:
-      path: "{{ etcd_data_path }}"
+      path: "{{ tls_root }}"
       owner: root
       group: root
       mode: 0644
       state: directory
 
-- name: Ensure TLS Root exists.
-  file:
-      path: "{{ tls_root }}" 
-      owner: root
-      group: root
-      mode: 0644
-      state: directory
 
-- name: Setup etcd CA.
-  include_tasks: ca.yml
-  vars:
-      issuer:
-          O: Starstudio APP Platform ETCD Authority
-          CN: etcd.starapp.com
-      crt_path: "{{ tls_root }}/ca.crt"
-      key_path: "{{ tls_root }}/ca.key"
-      csr_path: "{{ tls_root }}/ca.csr"
+- name: Ensure CA exists.
+  include_tasks: roles/certs/tasks/main.yml
 
 - name: Setup etcd Client Certificates.
-  include_tasks: cert.yml
+  include_tasks: roles/certs/tasks/cert.yml
   vars:
       issuer:
           O: Starstudio APP Platform ETCD Client
           CN: client.etcd.starapp.com
-      ca_path: "{{ tls_root }}/ca.crt"
-      ca_key_path: "{{ tls_root }}/ca.key"
+      ca_path: "{{ pki_root }}/ca.crt"
+      ca_key_path: "{{ pki_root }}/ca.key"
       key_path: "{{ tls_root }}/client.key"
       csr_path: "{{ tls_root }}/client.csr"
       crt_path: "{{ tls_root }}/client.crt"
 
 
 - name: Setup etcd Peer Certificates.
-  include_tasks: cert.yml
+  include_tasks: roles/certs/tasks/cert.yml
   vars:
       issuer:
           O: Starstudio APP Platform ETCD Peer
           CN: peer.etcd.starapp.com
-      ca_path: "{{ tls_root }}/ca.crt"
-      ca_key_path: "{{ tls_root }}/ca.key"
+      ca_path: "{{ pki_root }}/ca.crt"
+      ca_key_path: "{{ pki_root }}/ca.key"
       key_path: "{{ tls_root }}/peer.key"
       csr_path: "{{ tls_root }}/peer.csr"
       crt_path: "{{ tls_root }}/peer.crt"

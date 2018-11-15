@@ -1,4 +1,7 @@
 ---
+- set_fact:
+    etcd_data_path: "{{ data_root }}/etcd"
+
 - name: Ensure data root exists.
   file:
       path: "{{ etcd_data_path }}"

@@ -5,8 +5,8 @@
   become: yes
 
   vars: 
-      tls_root: "{{ etcd_data_path }}/tls"
-      etcd_storage_root:  "{{ etcd_data_path }}/data"
+      pki_root: "{{ data_root }}/tls"
+      etcd_storage_root:  "{{ data_root }}/etcd/data"
 
   roles:
     - docker_engine
