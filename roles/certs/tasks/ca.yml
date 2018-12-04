@@ -1,3 +1,15 @@
+#
+#   @Description:
+#       Generate an certificate signed by PKI CA.
+#
+#   @vars:
+#       key_path        Private key path to save.
+#       csr_path        CSR path to save.
+#       crt_path        Certificate to save.
+#       issuer:         Issuer information
+#           CN: ...     CommonName
+#           O:  ...     Organization
+#
 ---
 - stat:
       path: "{{ key_path }}"

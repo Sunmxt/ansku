@@ -1,4 +1,16 @@
+#
+#   @Description: 
+#       Issue certs from Let's Encrypt
+#
+#   @vars:
+#       pki_root            Root path of PKI dictionary.
+#       cert_root           Root path of Certificates
+#       issue_domain        Domain to issue.
+#       acme_email          Email of ACME Account.
+
 ---
+- include_vars: roles/certs/vars/main.yml
+
 - set_fact:
     chain_cert: "{{ cert_root }}/chain.pem"
     fullchain_cert: "{{ cert_root }}/fullchain.pem"
@@ -7,7 +19,7 @@
     cert_key: "{{ cert_root }}/{{ issue_domain }}.key"
 
 
-- include_tasks: acme_account.yaml
+- include_tasks: roles/certs/tasks/acme_account.yml
  
 - name: Ensure cert root exists.
   file:
@@ -45,7 +57,7 @@
     dest: "{{ server_side_cert }}"
     chain_dest: "{{ chain_cert }}"
     fullchain_dest: "{{ fullchain_cert }}"
-    account_email: "{{ account_email }}"
+    account_email: "{{ acme_email }}"
     acme_directory: "{{ letsencrypt_acme_directory }}"
     acme_version: "{{ letsencrypt_acme_version }}"
     challenge: "{{ letsencrypt_challenge_method }}"
@@ -58,7 +70,7 @@
   vars:
     record_name: "{{ created_challenge['challenge_data'][issue_domain]['dns-01']['record'] }}"
     record_value: "{{ created_challenge['challenge_data'][issue_domain]['dns-01']['resource_value'] }}"
-  when: letsencrypt_challenge_method == "dns-01"
+  when: letsencrypt_challenge_method == "dns-01" and created_challenge is changed
 
 - name: Trigger challenge.
   letsencrypt:
@@ -74,9 +86,8 @@
     agreement: "{{ letsencrypt_agreement }}"
     remaining_days: "{{ letsencrypt_remaining_days }}"
     data: "{{ created_challenge }}"
-  when: created_challenge is changed
   register: verify_challenge
-  when: letsencrypt_challenge_method == "dns-01"
+  when: letsencrypt_challenge_method == "dns-01" and created_challenge is changed
 
 - name: Print Challenge result
   debug:
@@ -85,9 +96,14 @@
 - name: Succeed.
   debug:
     msg: Issued successfully.
-  when: "verify_challenge['authorizations'][issue_domain]['status'] == 'valid'"
+  when: "verify_challenge['authorizations'][issue_domain]['status'] == 'valid' and created_challenge is changed"
 
 - name: Failed.
   fail:
     msg: Failed.
-  when: "verify_challenge['authorizations'][issue_domain]['status'] != 'valid'"
+  when: "verify_challenge['authorizations'][issue_domain]['status'] != 'valid' and created_challenge is changed"
+
+- name: Succeed with no issue.
+  debug:
+    msg: Certificate not expired.
+  when: created_challenge is changed
