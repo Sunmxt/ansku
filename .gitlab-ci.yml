@@ -16,7 +16,7 @@ build-cleandns-image:
     - apk add bash
     - bash ./build-clean-dns.sh
 
-build-cleandns-image:
+build-ansible-image:
   stage: build
   script:
     - apk add bash
