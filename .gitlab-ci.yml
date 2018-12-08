@@ -1,0 +1,23 @@
+image: docker:stable
+
+stages:
+  - build
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DREIVER: overlay2
+
+services:
+  - docker:dind
+
+build-cleandns-image:
+  stage: build
+  script:
+    - apk add bash
+    - bash ./build-clean-dns.sh
+
+build-ansible-image:
+  stage: build
+  script:
+    - apk add bash
+    - bash ./build-ansible-env.sh
