@@ -14,8 +14,19 @@
 #
 ---
 - set_fact:
-    __ca_path: "{{ ca_path | default( pki_root + '/ca.crt') }}"
-    __ca_key_path: "{{ ca_path | default( pki_root + '/ca.key') }}"
+    __pki_root: "{{ pki_root | default(data_root + '/tls') }}"
+    __csr_param: {}
+
+- set_fact:
+    __ca_path: "{{ ca_path | default( __pki_root + '/ca.crt') }}"
+    __ca_key_path: "{{ ca_key_path | default( __pki_root + '/ca.key') }}"
+    __csr_param: |
+        {% set _d = __csr_param.update({'privatekey_path': key_path, 'common_name': issuer['CN'], 'organization_name': issuer['O'], 'path': csr_path}) -%}
+        {% if 'SAN' in issuer -%}
+            {% set _d = __csr_param.update({'subject_alt_name': issuer['SAN']}) -%}
+        {%- endif %}
+        {{ __csr_param }}
+        
 
 - stat:
       path: "{{ key_path }}"
@@ -29,10 +40,11 @@
 
 - name: Generate Certificate CSR.
   openssl_csr:
-      path: "{{ csr_path }}"
-      privatekey_path: "{{ key_path }}"
-      common_name: "{{ issuer.CN }}"
-      organization_name: "{{ issuer.O }}"
+    path: "{{ csr_path }}"
+    privatekey_path: "{{ key_path }}"
+    common_name: "{{ issuer.CN }}"
+    subject_alt_name: "{{ issuer.SAN | default(omit) }}"
+    organization_name: "{{ issuer.O }}"
 
 - name: Generate Certificate.
   openssl_certificate:

@@ -1,14 +1,10 @@
 ---
-- name: Deploy single etcd node.
-  hosts: etcd_single
+- name: Bootstrap etcd cluster.
+  hosts: etcd_nodes
   become_user: "root"
   become: yes
 
-  vars: 
-      pki_root: "{{ data_root }}/tls"
-      etcd_storage_root:  "{{ data_root }}/etcd/data"
-
   roles:
-    - docker_engine
-    - etcd_certs
-    - etcd_single
+    #- docker_engine
+    - etcd_certs_deploy
+    #- etcd_single

@@ -1,0 +1,24 @@
+#
+#
+#   Scale up etcd member.
+#
+#   @params:
+#       pki_root        required        Directory to store certificates.
+#       local_pki_root  required        PKI Path in local.
+#       data_root       required        Directory to store etcd data.
+
+---
+- name: Scale up etcd node.
+  hosts: master
+  become_user: "root"
+  become: yes
+
+  vars: 
+      pki_root: "{{ data_root }}/tls"
+      etcd_storage_root:  "{{ data_root }}/etcd/data"
+
+  roles:
+    - docker_engine
+    - etcd_certs_deploy
+    - etcd_scaleup
+

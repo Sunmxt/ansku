@@ -1,0 +1,47 @@
+version: "3.2"
+services:
+    cluster_etcd:
+        image: k8s.gcr.io/etcd:3.3.10-0
+        ports:
+          - "2379:2379"
+          - "2380:2380"
+          #- "4001:4001"
+          #- "7001:7001"
+        volumes:
+          - type: bind
+            source: "{{ __etcd_data_root }}"
+            target: "/data"
+          - type: bind
+            source: "{{ __etcd_cert_root }}"
+            target: "/etc/etcd/tls"
+          - type: bind
+            source: "{{ __pki_root }}/ca.crt"
+            target: "/etc/etcd/tls/ca.crt"
+            
+    
+        restart: always
+        environment:
+          - ETCD_LISTEN_CLIENT_URLS=https://0.0.0.0:2379
+          - ETCD_LISTEN_PEER_URLS=https://0.0.0.0:2380
+          - ETCD_DATA_DIR=/data
+          - ETCD_TRUSTED_CA_FILE=/etc/etcd/tls/ca.crt
+          - ETCD_CERT_FILE=/etc/etcd/tls/client.crt
+          - ETCD_KEY_FILE=/etc/etcd/tls/client.key
+          - ETCD_CLIENT_CERT_AUTH=true
+          #- ETCD_PEER_TRUSTED_CA_FILE=/etc/etcd/tls/ca.crt
+          #- ETCD_PEER_CERT_FILE=/etc/etcd/tls/peer.crt
+          #- ETCD_PEER_KEY_FILE=/etc/etcd/tls/peer.key
+          - ETCD_PEER_CLIENT_CERT_AUTH=true 
+          - ETCD_ADVERTISE_CLIENT_URLS={{ my_client_endpoint }}
+          - ETCD_INITIAL_ADVERTISE_PEER_URLS={{ my_peer_endpoint }}
+          - ETCD_INITIAL_CLUSTER={{ ','.join(init_peer_list) }}
+          - ETCD_INITIAL_CLUSTER_TOKEN=star-kube-etcd
+          - ETCD_INITIAL_CLUSTER_STATE=new
+          - ETCD_NAME={{ hostvars[inventory_hostname]['etcd_node_name'] }}
+          - ETCDCTL_CA_FILE=/etc/etcd/tls/ca.crt
+          - ETCDCTL_CERT_FILE=/etc/etcd/tls/client.crt
+          - ETCDCTL_KEY_FILE=/etc/etcd/tls/client.key
+          - ETCDCTL_ENDPOINTS=https://127.0.0.1:2379
+           
+         
+        command: ['etcd', '--peer-auto-tls']

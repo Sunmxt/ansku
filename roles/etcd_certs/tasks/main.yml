@@ -1,10 +1,21 @@
+#
+#   Generate etcd cluster
+#
+#   @params:
+#       data_root       required    Root to store cluster data.
+#       pki_root                    Path to store cluster certificates (default: {{ data_root }}/tls)
+#       etcd_cert_root              Path to store etcd certificates. (default: {{ pki_root }}/etcd)
+#
 ---
 - set_fact:
-    tls_root: "{{ pki_root }}/etcd"
+    __pki_root: "{{ pki_root | default(data_root + '/tls') }}"
+
+- set_fact:
+    __etcd_cert_root: "{{ etcd_cert_root | default(__pki_root + '/etcd') }}"
 
 - name: Ensure etcd certs root exists.
   file:
-      path: "{{ tls_root }}"
+      path: "{{ __etcd_cert_root }}"
       owner: root
       group: root
       mode: 0644
@@ -14,28 +25,29 @@
 - name: Ensure CA exists.
   include_tasks: roles/certs/tasks/main.yml
 
-- name: Setup etcd Client Certificates.
-  include_tasks: roles/certs/tasks/cert.yml
-  vars:
-      issuer:
-          O: Starstudio APP Platform ETCD Client
-          CN: client.etcd.starapp.com
-      ca_path: "{{ pki_root }}/ca.crt"
-      ca_key_path: "{{ pki_root }}/ca.key"
-      key_path: "{{ tls_root }}/client.key"
-      csr_path: "{{ tls_root }}/client.csr"
-      crt_path: "{{ tls_root }}/client.crt"
+#- name: Setup etcd Client Certificates.
+#  include_tasks: roles/certs/tasks/cert.yml
+#  vars:
+#      issuer:
+#          O: Starstudio APP Platform ETCD Client
+#          CN: client.etcd.starapp.com
+#          SAN: 'IP:127.0.0.1,IP:192.168.8.10,IP:192.168.8.11'
+#      ca_path: "{{ __pki_root }}/ca.crt"
+#      ca_key_path: "{{ __pki_root }}/ca.key"
+#      key_path: "{{ __etcd_cert_root }}/client.key"
+#      csr_path: "{{ __etcd_cert_root }}/client.csr"
+#      crt_path: "{{ __etcd_cert_root }}/client.crt"
 
 
-- name: Setup etcd Peer Certificates.
-  include_tasks: roles/certs/tasks/cert.yml
-  vars:
-      issuer:
-          O: Starstudio APP Platform ETCD Peer
-          CN: peer.etcd.starapp.com
-      ca_path: "{{ pki_root }}/ca.crt"
-      ca_key_path: "{{ pki_root }}/ca.key"
-      key_path: "{{ tls_root }}/peer.key"
-      csr_path: "{{ tls_root }}/peer.csr"
-      crt_path: "{{ tls_root }}/peer.crt"
+#- name: Setup etcd Peer Certificates.
+#  include_tasks: roles/certs/tasks/cert.yml
+#  vars:
+#      issuer:
+#          O: Starstudio APP Platform ETCD Peer
+#          CN: peer.etcd.starapp.com
+#      ca_path: "{{ __pki_root }}/ca.crt"
+#      ca_key_path: "{{ __pki_root }}/ca.key"
+#      key_path: "{{ __etcd_cert_root }}/peer.key"
+#      csr_path: "{{ __etcd_cert_root }}/peer.csr"
+#      crt_path: "{{ __etcd_cert_root }}/peer.crt"
 

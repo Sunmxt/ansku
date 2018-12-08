@@ -1,0 +1,10 @@
+---
+- name: Generate etcd cluster certificates..
+  hosts: dummy
+  become_user: "root"
+  become: yes
+  
+
+  roles:
+    - name: etcd_certs
+      delegate_to: localhost

@@ -1,0 +1,18 @@
+---
+- debug:
+    msg:
+      - "DNS-01 challenge created. Ansible will parse until the record meeting target value."
+      - "Configure your DNS Server with following information."
+      - ""
+      - "TXT record name  =  {{ record_name }}"
+      - "            value = {{ record_value }}"
+        
+
+- name: Wait for DNS Challenge values.
+  shell: |
+        while true;  do
+            if nslookup -type=TXT {{ record_name }} | grep {{ record_value }}; then
+                break
+            fi
+            sleep 10
+        done

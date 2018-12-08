@@ -1,17 +1,7 @@
 ---
-- name: Install docker
-  yum:
-      name: docker
-      state: latest
-  notify:
-    - enable docker engine
-    - start docker engine
+- include_tasks: centos.yml
+  when: inventory_hostname == 'localhost' or inventory_hostname == '127.0.0.1'
+  delegate_to: localhost
 
-- name: Install docker-compose
-  yum:
-      name: docker-compose
-      state: latest
-
-- name: Install pipy docker-compose
-  pip:
-      name: docker-compose
+- include_tasks: centos.yml
+  when: inventory_hostname != 'localhost' and inventory_hostname != '127.0.0.1'

@@ -96,12 +96,12 @@
 - name: Succeed.
   debug:
     msg: Issued successfully.
-  when: "verify_challenge['authorizations'][issue_domain]['status'] == 'valid' and created_challenge is changed"
+  when: "created_challenge is changed and verify_challenge['authorizations'][issue_domain]['status'] == 'valid'"
 
 - name: Failed.
   fail:
     msg: Failed.
-  when: "verify_challenge['authorizations'][issue_domain]['status'] != 'valid' and created_challenge is changed"
+  when: "created_challenge is changed and  verify_challenge['authorizations'][issue_domain]['status'] != 'valid'"
 
 - name: Succeed with no issue.
   debug:

@@ -1,0 +1,31 @@
+---
+- name: epel repos
+  yum:
+    name: epel-release
+    state: latest
+
+- name: Install docker
+  yum:
+      name: docker
+      state: present
+  notify:
+    - enable docker engine
+    - start docker engine
+
+- name: Install docker-compose
+  yum:
+      name: docker-compose
+      state: latest
+
+- name: Install pipy2
+  yum:
+      name: python2-pip
+      state: latest
+
+- name: Install pipy docker-compose
+  pip:
+      name: docker-compose
+
+- name: Install pipy docker-compose
+  pip:
+      name: pyOpenSSL

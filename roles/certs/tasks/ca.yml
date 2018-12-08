@@ -27,6 +27,7 @@
       privatekey_path: "{{ key_path }}"
       common_name: "{{ issuer.CN }}"
       organization_name: "{{ issuer.O }}"
+      basic_constraints: "CA:true"
 
 - name: Generate CA.
   openssl_certificate:
@@ -35,3 +36,4 @@
       csr_path: "{{ csr_path }}"
       privatekey_path: "{{ key_path }}"
       provider: selfsigned
+      

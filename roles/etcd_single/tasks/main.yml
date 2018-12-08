@@ -1,26 +1,69 @@
+#
+#
+#   Bootstrap etcd cluster
+#
+#   @params:
+#       data_root       required    Root to store cluster data.
+#       etcd_data_root              Path to store etcd data. (default: {{ data_root }}/etcd/data)
+#       pki_root                    Path to store cluster certificates (default: {{ data_root }}/tls)
+#       etcd_cert_root              Path to store etcd certificates. (default: {{ pki_root }}/etcd)
+#
 ---
 - set_fact:
-    etcd_data_path: "{{ data_root }}/etcd"
+    __etcd_data_root: "{{ etcd_data_root | default(data_root + '/etcd/data') }}"
+    __pki_root: "{{ pki_root | default(data_root + '/tls') }}"
+
+- set_fact:
+    __etcd_root: "{{ etcd_root | default(data_root + '/etcd') }}"
+    __etcd_cert_root: "{{ etcd_cert_root | default(__pki_root + '/etcd') }}"
+
 
 - name: Ensure data root exists.
   file:
-      path: "{{ etcd_data_path }}"
+      path: "{{ __etcd_data_root }}"
       owner: root
       group: root
       mode: 0644
       state: directory
 
 
-- name: Ensure etcd storage root exists.
+- name: Ensure etcd cert root exists.
   file:
-      path: "{{ etcd_storage_root }}"
+      path: "{{ __etcd_cert_root }}"
       owner: root
       group: root
       mode: 0644
       state: directory
+
+- set_fact:
+      init_peer_list: |
+        {% set etcd_peers_url = [] -%}
+        {% for hostn in groups['etcd_nodes'] -%}
+            {% set pub_addr = hostvars[hostn]['publish_address'] | default(hostn) -%}
+            {% set etcd_node_name = hostvars[hostn]['etcd_node_name']  -%}
+            {%- if etcd_peers_url.append( etcd_node_name + '=https://' + pub_addr + ':2380') %}{%- endif %}
+        {%- endfor %}
+        {{ etcd_peers_url -}}
+
+      my_peer_endpoint: |
+        {% set pub_addr = publish_address | default(inventory_hostname)  -%}
+        {% set endpoint = 'https://' + pub_addr + ':2380' -%}
+        {{ endpoint }}
+        
+      my_client_endpoint: |
+        {% set pub_addr = publish_address | default(inventory_hostname)  -%}
+        {% set endpoint = 'https://' + pub_addr + ':2379' -%}
+        {{ endpoint }}
+
+- file:
+    path: "{{ __etcd_root }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: directory
 
 - name: Generate docker-compose file.
   template:
       src: docker-compose.yml.j2
-      dest: "{{ etcd_data_path }}/docker-compose.yml"
+      dest: "{{ __etcd_root }}/docker-compose.yml"
   notify: start single etcd node

@@ -1,0 +1,80 @@
+#
+#   Deploy etcd certificates.
+#
+#   @params
+#       data_root   required    Path to store cluster data.
+#       pki_root                Path to store cluster certificates (default: {{ data_root }}/tls)
+#       etcd_cert_root          Path to store etcd certificates. (default: {{ pki_root }}/etcd)
+#
+#       local_data_root         Local path to store cluster data.(default: {{ data_root }} )
+#       local_pki_root          Local path to store cluster certificates (default: {{ local_pki_root }}/tls )
+#       local_etcd_cert_root    Local path to store etcd certificates. (default: {{ local_pki_root }}/etcd)
+---
+- set_fact:
+    __pki_root: "{{ pki_root | default(data_root + '/tls') }}"
+    __local_data_root: "{{ local_data_root | default(data_root) }}"
+
+- set_fact:
+    __etcd_cert_root: "{{ etcd_cert_root | default(__pki_root + '/etcd') }}"
+    __local_pki_root: "{{ local_pki_root | default(__local_data_root + '/tls') }}"
+
+- set_fact:
+    __local_etcd_cert_root: "{{ local_etcd_cert_root | default(__local_pki_root + '/etcd') }}"
+
+- file:
+    path: "{{ __etcd_cert_root }}"
+    owner: root
+    group: root
+    mode: 0644
+    state: directory
+
+- copy:
+    src: "{{ __local_pki_root }}/ca.crt"
+    dest: "{{ __pki_root }}/ca.crt"
+    owner: root
+    group: root
+    mode: 0644
+
+- copy:
+    src: "{{ __local_pki_root }}/ca.key"
+    dest: "{{ __pki_root }}/ca.key"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Setup etcd Client Certificates.
+  include_tasks: roles/certs/tasks/cert.yml
+  vars:
+      issuer:
+          O: Starstudio APP Platform ETCD Client
+          CN: client.etcd.starapp.com
+          SAN: |
+            {% set ip_sans = [] -%}
+            {% for hostn in groups['etcd_nodes'] -%}
+                {% set pub_addr = hostvars[hostn]['publish_address'] | default(hostn) -%}
+                {% set retval = ip_sans.append('IP:' + pub_addr) -%}
+            {%- endfor %}
+            {% set retval = ip_sans.append('IP:127.0.0.1') -%}
+            {{ ','.join(ip_sans) -}}
+
+      ca_path: "{{ __pki_root }}/ca.crt"
+      ca_key_path: "{{ __pki_root }}/ca.key"
+      key_path: "{{ __etcd_cert_root }}/client.key"
+      csr_path: "{{ __etcd_cert_root }}/client.csr"
+      crt_path: "{{ __etcd_cert_root }}/client.crt"
+
+#- name: Setup etcd Peer Certificates.
+#  include_tasks: roles/certs/tasks/cert.yml
+#  vars:
+#      issuer:
+#          O: Starstudio
+#          CN: "{{ hostvars[inventory_hostname]['publish_address'] | default(inventory_hostname) }}"
+#      ca_path: "{{ __pki_root }}/ca.crt"
+#      ca_key_path: "{{ __pki_root }}/ca.key"
+#      key_path: "{{ __etcd_cert_root }}/peer.key"
+#      csr_path: "{{ __etcd_cert_root }}/peer.csr"
+#      crt_path: "{{ __etcd_cert_root }}/peer.crt"
+
+- file:
+    path: "{{ __pki_root }}/ca.key"
+    state: absent

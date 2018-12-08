@@ -1,0 +1,11 @@
+#
+#       Scale etcd member.
+#
+#   @params:
+#       pki_root            required        Directory to store cerificates.
+#       data_root           required        Directory to store etcd data.
+#
+
+---
+- meta: flush_handlers
+- include_tasks: roles/etcd_single/tasks/main.yml
