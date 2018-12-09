@@ -1,0 +1,9 @@
+---
+- hosts: dummy
+  connection: local
+
+  roles:
+    # - precheck
+    - etcd_certs
+    - kube_binaries
+    
