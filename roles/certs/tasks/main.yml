@@ -1,10 +1,13 @@
 ---
 - set_fact:
-    __pki_root: "{{ pki_root | default(data_root + '/tls') }}"
-    
+    __local_data_root: "{{ local_data_root | default(playbook_dir + '/deploy_cluster_data') }}"
+
+- set_fact:
+    __local_pki_root: "{{ local_pki_root | default(__local_data_root + '/tls') }}"
+
 - name: Ensure PKI Root exists.
   file: 
-    path: "{{ __pki_root }}"
+    path: "{{ __local_pki_root }}"
     owner: root
     group: root
     mode: 0644
@@ -16,7 +19,7 @@
       issuer:
           O: Starstudio APP Platform Authority
           CN: "*.starapp.com"
-      crt_path: "{{ __pki_root }}/ca.crt"
-      key_path: "{{ __pki_root }}/ca.key"
-      csr_path: "{{ __pki_root }}/ca.csr"
+      crt_path: "{{ __local_pki_root }}/ca.crt"
+      key_path: "{{ __local_pki_root }}/ca.key"
+      csr_path: "{{ __local_pki_root }}/ca.csr"
 

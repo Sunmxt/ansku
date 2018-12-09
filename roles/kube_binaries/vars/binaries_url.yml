@@ -1,0 +1,6 @@
+#
+#   Kubernetes binaries URL.
+#
+---
+
+kubectl_bin_url: "https://storage.googleapis.com/kubernetes-release/release/v{{ __kube_version }}/bin/linux/amd64/kubectl"

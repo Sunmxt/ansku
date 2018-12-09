@@ -1,0 +1,13 @@
+#
+#   Ensure Kubelet binaries are in required version.
+#
+#   @params
+#       data_root     Path to store necessary data(binaries, configure, etc) during deployment.
+#
+---
+
+- name: Ensure kubectl binaries exists.
+  get_url:
+    url: "{{ kubectl_bin_url }}"
+    dest: "{{ __client_binaries_root }}/kubectl"
+  #delegate_to: localhost

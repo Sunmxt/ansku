@@ -9,7 +9,7 @@
 
 ---
 - name: Scale up etcd node.
-  hosts: master
+  hosts: etcd_nodes
   become_user: "root"
   become: yes
 

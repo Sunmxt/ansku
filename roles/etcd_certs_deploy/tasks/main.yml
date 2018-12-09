@@ -63,18 +63,6 @@
       csr_path: "{{ __etcd_cert_root }}/client.csr"
       crt_path: "{{ __etcd_cert_root }}/client.crt"
 
-#- name: Setup etcd Peer Certificates.
-#  include_tasks: roles/certs/tasks/cert.yml
-#  vars:
-#      issuer:
-#          O: Starstudio
-#          CN: "{{ hostvars[inventory_hostname]['publish_address'] | default(inventory_hostname) }}"
-#      ca_path: "{{ __pki_root }}/ca.crt"
-#      ca_key_path: "{{ __pki_root }}/ca.key"
-#      key_path: "{{ __etcd_cert_root }}/peer.key"
-#      csr_path: "{{ __etcd_cert_root }}/peer.csr"
-#      crt_path: "{{ __etcd_cert_root }}/peer.crt"
-
 - file:
     path: "{{ __pki_root }}/ca.key"
     state: absent
