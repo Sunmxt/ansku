@@ -23,7 +23,7 @@
       path: "{{ __etcd_data_root }}"
       owner: root
       group: root
-      mode: 0644
+      mode: 0755
       state: directory
 
 
@@ -32,7 +32,7 @@
       path: "{{ __etcd_cert_root }}"
       owner: root
       group: root
-      mode: 0644
+      mode: 0755
       state: directory
 
 - set_fact:
@@ -59,11 +59,17 @@
     path: "{{ __etcd_root }}"
     owner: root
     group: root
-    mode: 0644
+    mode: 0755
     state: directory
 
-- name: Generate docker-compose file.
+#- name: Generate docker-compose file.
+#  template:
+#      src: docker-compose.yml.j2
+#      dest: "{{ __etcd_root }}/docker-compose.yml"
+#  notify: start single etcd node
+
+- name: Generate etcd kubelet manifest.
   template:
-      src: docker-compose.yml.j2
-      dest: "{{ __etcd_root }}/docker-compose.yml"
-  notify: start single etcd node
+    src: etcd.manifest.j2
+    dest: "{{ __kubelet_manifest_root }}/etcd.manifest"
+  #notify: restart kubelet

@@ -1,0 +1,27 @@
+#
+#   Ensure Kubelet binaries are in required version.
+#
+#   @params
+#       data_root     Path to store necessary data(binaries, configure, etc) during deployment.
+#
+---
+
+- name: Download binaries requirements.
+  get_url:
+    url: "{{ item.from }}"
+    dest: "{{ item.to }}"
+  with_items:
+    - from: "{{ kubectl_bin_url }}"
+      to: "{{ __client_binaries_root }}/kubectl"
+    - from: "{{ kubelet_bin_url }}"
+      to: "{{ __client_binaries_root }}/kubelet"
+
+- name: Set binaries executable.
+  file:
+    path: "{{ item }}"
+    mode: 0755
+  with_items:
+    - from: "{{ kubectl_bin_url }}"
+      to: "{{ __client_binaries_root }}/kubectl"
+    - from: "{{ kubelet_bin_url }}"
+      to: "{{ __client_binaries_root }}/kubelet"

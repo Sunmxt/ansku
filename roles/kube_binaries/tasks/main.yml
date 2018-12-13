@@ -5,23 +5,12 @@
 #       kube_version                    Target kubernetes version. (default: 1.13.0)
 #       local_data_root                 Path to store necessary data(binaries, configure, etc) during deployment. (default: /tmp/kubernetes-deploy)
 
-- set_fact:
-    __local_data_root: "{{ local_data_root | default('/tmp') }}"
-
-- set_fact:
-    __binary_root: "{{ __local_data_root }}/bin"
-    __kube_version: "{{ kube_version | default('1.13.0') }}"
-
-
-- set_fact:
-    __client_binaries_root: "{{ __binary_root }}/client"
-
 - file:
-    path: "{{ __client_binaries_root }}"
+    path: "{{ __local_kube_client_binary_root }}"
     owner: root
     group: root
-    mode: 0644
+    mode: 0755
     state: directory
 
 - include_vars: roles/kube_binaries/vars/binaries_url.yml
-- include_tasks: roles/kube_binaries/tasks/kubectl.yml
+- include_tasks: roles/kube_binaries/tasks/client.yml

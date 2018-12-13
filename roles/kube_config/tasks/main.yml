@@ -1,0 +1,21 @@
+#
+#
+#   Generate Kubernetes client configures.
+#
+---
+- name: Load kubeconfig credentials.
+  include_tasks: roles/kube_config/tasks/load_kubeconfig_vars.yml
+  connection: local
+
+- name: Generate kubeconfig for kubelet
+  include_tasks: roles/kube_config/tasks/kubelet.yml
+
+- name: Generate kubeconfig for kubeproxy 
+  include_tasks: roles/kube_config/tasks/kubeproxy.yml
+
+- name: Generate kubeconfig for kubectl
+  include_tasks: roles/kube_config/tasks/kubectl.yml
+
+- template:
+    src: known_tokens.csv.j2
+    dest: "{{ __local_kube_client_binary_root }}/known_tokens.csv"

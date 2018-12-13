@@ -3,7 +3,14 @@
   connection: local
 
   roles:
-    # - precheck
     - etcd_certs
     - kube_binaries
-    
+    - kube_certs
+    - kube_config
+
+#- hosts: all
+#  become: yes
+#  become_user: root
+#
+#  roles:
+#    - precheck

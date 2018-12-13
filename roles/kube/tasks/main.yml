@@ -1,0 +1,62 @@
+#
+#   Common facts for kubernetes deployment.
+#
+---
+- set_fact:
+    __local_kube_ca: "{{ __local_kube_cert_root }}/ca.crt"
+    __local_kube_ca_key: "{{ __local_kube_cert_root }}/ca.key"
+    __local_kube_ca_csr: "{{ __local_kube_cert_root }}/ca.csr"
+    __local_kube_tls: "{{ __local_kube_cert_root }}/server.crt"
+    __local_kube_tls_key: "{{ __local_kube_cert_root }}/server.key"
+    __local_kube_tls_csr: "{{ __local_kube_cert_root }}/server.csr"
+    __local_kube_client: "{{ __local_kube_cert_root }}/client.crt"
+    __local_kube_client_key: "{{ __local_kube_cert_root }}/client.key"
+    __local_kube_client_csr: "{{ __local_kube_cert_root }}/client.csr"
+
+    __local_kube_binary_root: "{{ __local_data_root }}/bin"
+    __kube_config_root: "{{ kube_config_root | default(data_root + '/kubernetes') }}"
+
+    apiserver_publish_list: |
+      {% set endpoint_list = [] -%}
+      {% for hostn in groups['master'] -%}
+        {% set pub_hostn = hostvars[hostn]['publish_address'] | default(hostn) -%}
+        {% set _d = endpoint_list.append(pub_hostn) -%}
+      {%- endfor %}
+      {{ endpoint_list -}}
+
+    apiserver_endpoints: |
+      {% set endpoint_list = [] -%}
+      {% for hostn in groups['master'] -%}
+        {% set pub_hostn = hostvars[hostn]['publish_address'] | default(hostn) -%}
+        {% set _d = endpoint_list.append( 'https://' + pub_hostn + ':8080') -%}
+      {%- endfor %}
+      {{ endpoint_list -}}
+    
+
+- set_fact:
+    __kube_ca: "{{ __kube_cert_root }}/ca.crt"
+    __kube_ca_key: "{{ __kube_cert_root }}/ca.key"
+    __kube_ca_csr: "{{ __kube_cert_root }}/ca.csr"
+    __kube_tls: "{{ __kube_cert_root }}/server.crt"
+    __kube_tls_key: "{{ __kube_cert_root }}/server.key"
+    __kube_tls_csr: "{{ __kube_cert_root }}/server.csr"
+    __kube_client: "{{ __kube_cert_root }}/client.crt"
+    __kube_client_key: "{{ __kube_cert_root }}/client.key"
+    __kube_client_csr: "{{ __kube_cert_root }}/client.csr"
+
+    __local_kube_client_binary_root: "{{ __local_kube_binary_root }}/client"
+    __kubelet_config_root: "{{ kubelet_config_root | default(__kube_config_root + '/kubelet') }}"
+
+- set_fact:
+    __kubelet_manifest_root: "{{ kubelet_config_root | default(__kubelet_config_root + '/manifest') }}" 
+    __kubelet_systemd_config_root: "{{ kubelet_systemd_config_root | default(__kubelet_config_root + '/systemd') }}" 
+
+- file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+  with_items:
+    - "{{ __kubelet_manifest_root }}"
+    - "{{ __kubelet_systemd_config_root }}"

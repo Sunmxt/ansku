@@ -1,0 +1,30 @@
+[Unit]
+Description=Kubernetes Kubelet Server
+Documentation=https://kubernetes.io/docs/concepts/overview/components/#kubelet https://kubernetes.io/docs/reference/generated/kubelet/
+After=docker.service
+Requires=docker.service
+
+[Service]
+WorkingDirectory=/var/lib/kubelet
+#EnvironmentFile=-/etc/kubernetes/config
+#EnvironmentFile=-/etc/kubernetes/kubelet
+
+## ansku additional start
+EnvironmentFile={{ __kubelet_systemd_config_root }}/config
+EnvironmentFile={{ __kubelet_systemd_config_root }}/kubelet
+## ansku additional end
+
+ExecStart=/usr/bin/kubelet \
+        $KUBE_LOGTOSTDERR \
+        $KUBE_LOG_LEVEL \
+        $KUBELET_KUBECONFIG \
+        $KUBELET_ADDRESS \
+        $KUBELET_PORT \
+        $KUBELET_HOSTNAME \
+        $KUBE_ALLOW_PRIV \
+        $KUBELET_ARGS
+Restart=on-failure
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

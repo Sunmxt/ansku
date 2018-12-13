@@ -1,0 +1,8 @@
+#
+#   Deploy kubernetes client.
+#
+---
+- include_tasks: roles/common/tasks/deploy_bin.yml
+  vars:
+    src: "{{ __local_kube_client_binary_root }}/kubectl"
+    dest: "/usr/bin/kubectl"

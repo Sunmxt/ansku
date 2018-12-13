@@ -1,0 +1,41 @@
+#
+#   Deploy Kubernetes Master Cluster Certificates
+#
+---
+- file:
+    path: "{{ __kube_cert_root }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Deploy Certificates.
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+  - src: "{{ __local_kube_ca }}"
+    dest: "{{ __kube_ca }}"
+  - src: "{{ __local_kube_tls }}"
+    dest: "{{ __kube_tls }}"
+  - src: "{{ __local_kube_client }}"
+    dest: "{{ __kube_client }}"
+
+
+- name: Deploy Keys.
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0600
+  with_items:
+  - src: "{{ __local_kube_ca_key }}"
+    dest: "{{ __kube_ca_key }}"
+  - src: "{{ __local_kube_tls_key }}"
+    dest: "{{ __kube_tls_key }}"
+  - src: "{{ __local_kube_client_key }}"
+    dest: "{{ __kube_client_key }}"

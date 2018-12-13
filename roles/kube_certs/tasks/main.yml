@@ -1,0 +1,48 @@
+#
+#   Generate Kubernetes Cluster cerificates.
+#
+#   @args:
+#       local_pki_root              Local PKI root. ()
+#
+#       kube_version                Kubernetes version. (default: 1.13)
+---
+- name: Ensure certificate directory exists.
+  file:
+    path: "{{ __local_kube_cert_root }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Generate Kubernetes CA
+  include_tasks: roles/certs/tasks/ca.yml
+  vars:
+    crt_path: "{{ __local_kube_ca }}"
+    csr_path: "{{ __local_kube_ca_csr }}"
+    key_path: "{{ __local_kube_ca_key }}"
+    issuer:
+        CN: Kubernetes CA
+        O: StarStudio
+
+- include_tasks: roles/certs/tasks/cert.yml
+  vars:
+    issuer:
+        CN: Kubernetes APIServer Master
+        O: StarStudio
+    ca_path: "{{ __local_kube_ca }}"
+    ca_key_path: "{{ __local_kube_ca_key }}"
+    crt_path: "{{ __local_kube_cert_root }}/server.crt"
+    key_path: "{{ __local_kube_cert_root }}/server.key"
+    csr_path: "{{ __local_kube_cert_root }}/server.csr"
+
+- name: Generate Kubelet Client Certificates.
+  include_tasks: roles/certs/tasks/cert.yml
+  vars:
+    key_path: "{{ __local_kube_client_key }}"
+    csr_path: "{{ __local_kube_client_csr }}"
+    crt_path: "{{ __local_kube_client }}"
+    ca_path: "{{ __local_kube_ca }}"
+    ca_key_path: "{{ __local_kube_ca_key }}"
+    issuer:
+        CN: Kubernetes APIServer Kubelet Client
+        O: StarStudio

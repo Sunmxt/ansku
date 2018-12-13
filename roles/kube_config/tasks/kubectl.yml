@@ -1,0 +1,7 @@
+---
+- name: Set cluster to kubeconfig for kubectl.
+  shell: |
+    "{{ __local_kube_client_binary_root }}/kubectl" config set-cluster "{{ __kube_cluster_name }}" --certificate-authority="{{ __local_kube_ca }}" --embed-certs --server="{{ ','.join(apiserver_endpoints) }}" --kubeconfig="{{ __local_kube_client_binary_root }}/kubeconfig.kubectl";
+    "{{ __local_kube_client_binary_root }}/kubectl" config set-credentials "{{ __kubectl_username }}" --client-certificate="{{ __local_kube_client }}" --client-key="{{ __local_kube_client_key }}" --embed-certs=true --token={{ __kubectl_user_token }} --kubeconfig="{{ __local_kube_client_binary_root }}/kubeconfig.kubectl"
+    "{{ __local_kube_client_binary_root }}/kubectl" config set-context main-cluster-context --cluster="{{ __kube_cluster_name }}" --user="{{ __kubectl_username }}" --kubeconfig="{{ __local_kube_client_binary_root }}/kubeconfig.kubectl"
+    "{{ __local_kube_client_binary_root }}/kubectl" config use-context main-cluster-context --kubeconfig="{{ __local_kube_client_binary_root }}/kubeconfig.kubectl"

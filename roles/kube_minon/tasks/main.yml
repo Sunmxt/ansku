@@ -1,0 +1,33 @@
+#
+#   Deploy and setup kubelet.
+#
+---
+- include_tasks: roles/common/tasks/deploy_bin.yml
+  vars:
+    src: "{{ __local_kube_client_binary_root }}/kubelet"
+    dest: "/usr/bin/kubelet"
+    owner: root
+    group: root
+    mode: 0755
+
+- template:
+    src: kubelet.service.j2
+    dest: "/usr/lib/systemd/system/kubelet.service" 
+
+- template:
+    src: kubelet.j2
+    dest: "{{ __kubelet_systemd_config_root }}/kubelet"
+
+- template:
+    src: config.j2
+    dest: "{{ __kubelet_systemd_config_root }}/config"
+
+#- name: Enable kubelet.
+#  systemd:
+#    name: kubelet
+#    enabled: yes
+#
+#- name: Start kubelet.
+#  service:
+#    name: kubelet
+#    state: started

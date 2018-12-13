@@ -25,7 +25,7 @@
     path: "{{ __etcd_cert_root }}"
     owner: root
     group: root
-    mode: 0644
+    mode: 0755
     state: directory
 
 - copy:
