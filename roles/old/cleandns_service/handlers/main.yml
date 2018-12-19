@@ -1,5 +1,0 @@
----
-- name: Compose CleanDNS
-  docker_service:
-      project_src: "{{ cleandns_data_root }}"
-      state: present 

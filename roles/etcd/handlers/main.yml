@@ -1,5 +1,0 @@
----
-- name: start single etcd node
-  docker_service:
-      project_src: "{{ __etcd_root }}"
-      state: present

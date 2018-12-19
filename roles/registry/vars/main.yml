@@ -1,6 +1,0 @@
----
-letsencrypt_acme_directory: "https://acme-v01.api.letsencrypt.org/directory"
-letsencrypt_acme_version: 1
-letsencrypt_agreement: "https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf"
-letsencrypt_remaining_days: 60
-letsencrypt_challenge_method: "{{ acme_challenge_method | default('dns-01') }}"
