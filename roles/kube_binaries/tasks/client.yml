@@ -12,16 +12,14 @@
     dest: "{{ item.to }}"
   with_items:
     - from: "{{ kubectl_bin_url }}"
-      to: "{{ __client_binaries_root }}/kubectl"
+      to: "{{ __local_kube_client_binary_root }}/kubectl"
     - from: "{{ kubelet_bin_url }}"
-      to: "{{ __client_binaries_root }}/kubelet"
+      to: "{{ __local_kube_client_binary_root }}/kubelet"
 
 - name: Set binaries executable.
   file:
     path: "{{ item }}"
     mode: 0755
   with_items:
-    - from: "{{ kubectl_bin_url }}"
-      to: "{{ __client_binaries_root }}/kubectl"
-    - from: "{{ kubelet_bin_url }}"
-      to: "{{ __client_binaries_root }}/kubelet"
+    - "{{ __local_kube_client_binary_root }}/kubectl"
+    - "{{ __local_kube_client_binary_root }}/kubelet"

@@ -1,0 +1,39 @@
+---
+version: "3.2"
+services:
+  apiserver:
+    image: "k8s.gcr.io/kube-apiserver-amd64:v1.13.0"
+    ports:
+      - '6443:6443'
+    #network_mode: host
+    command:
+      - 'kube-apiserver'
+      - '--advertise-address=192.168.8.1'
+      - '--etcd-cafile=/etc/etcd/tls/ca.crt'
+      - '--etcd-certfile=/etc/etcd/tls/client.crt'
+      - '--etcd-servers=https://192.168.8.10:2379,https://192.168.8.11:2379,https://192.168.8.1:2379'
+      - '--etcd-keyfile=/etc/etcd/tls/client.key'
+      - '--etcd-prefix=star-kube-container'
+      - '--cert-dir=/etc/kubernetes/tls'
+      - '--tls-cert-file=/etc/kubernetes/tls/server.crt.bundle'
+      - '--tls-private-key-file=/etc/kubernetes/tls/server.key'
+      #- '--secure-port=8080'
+      - '--bind-address=0.0.0.0'
+      - '--token-auth-file=/etc/kubernetes/ansku/bin/client/known_tokens.csv'
+      - '--authorization-mode=Node,RBAC'
+      #- '--enable-admission-plugins=NodeRestriction'
+      - '--v=2'
+
+    volumes:
+      - type: bind
+        source: /home/www/AppPlatform/data/tls/ca.crt
+        target: /etc/etcd/tls/ca.crt
+      - type: bind
+        source: /home/www/AppPlatform/data/tls/etcd
+        target: /etc/etcd/tls
+      - type: bind
+        source: /home/www/AppPlatform/data/tls/kubernetes
+        target: /etc/kubernetes/tls/
+      - type: bind
+        source: /home/www/AppPlatform/data/ansku
+        target: /etc/kubernetes/ansku

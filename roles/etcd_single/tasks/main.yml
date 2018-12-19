@@ -44,16 +44,17 @@
             {%- if etcd_peers_url.append( etcd_node_name + '=https://' + pub_addr + ':2380') %}{%- endif %}
         {%- endfor %}
         {{ etcd_peers_url -}}
-
       my_peer_endpoint: |
-        {% set pub_addr = publish_address | default(inventory_hostname)  -%}
-        {% set endpoint = 'https://' + pub_addr + ':2380' -%}
-        {{ endpoint }}
-        
+        {% set endpoint = [] %}
+        {% set pub_addr = publish_address | default(inventory_hostname) -%}
+        {% set retv = endpoint.append('https://' + pub_addr + ':2380') -%}
+        {{ endpoint -}}
+
       my_client_endpoint: |
-        {% set pub_addr = publish_address | default(inventory_hostname)  -%}
-        {% set endpoint = 'https://' + pub_addr + ':2379' -%}
-        {{ endpoint }}
+        {% set endpoint = [] %}
+        {% set pub_addr = publish_address | default(inventory_hostname) -%}
+        {% set retv = endpoint.append('https://' + pub_addr + ':2379') -%}
+        {{ endpoint -}}
 
 - file:
     path: "{{ __etcd_root }}"

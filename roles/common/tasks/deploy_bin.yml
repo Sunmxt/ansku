@@ -1,0 +1,32 @@
+#
+#   Deploy executable binary.
+#
+#   @params
+#       src     required    Local file.
+#       dest    required    Target path.
+#       force               Force to override original binaries when the target binary exists. (default: no)
+#       owner               File owner. (default: root)
+#       group               File group. (default: root)
+#       mode                File mode. (default: 0755)
+---
+
+- copy:
+    src: "{{ src }}"
+    dest: "{{ dest }}"
+    force: "{{ force | default('no') }}"
+    mode: 0755
+    owner: root
+    group: root
+
+- stat:
+    path: "{{ src }}"
+  connection: local
+  register: __bin_src
+
+- stat:
+    path: "{{ dest }}"
+  register: __bin_dst
+
+- fail:
+    msg: "Cannot deploy {{ dest }}."
+  when: __bin_src is not defined or __bin_src is not defined or __bin_src['stat']['checksum'] != __bin_dst['stat']['checksum']

@@ -1,0 +1,11 @@
+---
+- name: Load Node Deploy Metadata.
+  include_tasks: roles/kube/tasks/load_meta.yml
+
+ 
+- name: Load Global Deploy Metadata.
+  import_tasks: roles/kube/tasks/load_global_meta.yml
+  connection: local
+  delegate_to: localhost
+  run_once: yes
+

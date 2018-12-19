@@ -6,6 +6,16 @@
 #
 #       kube_version                Kubernetes version. (default: 1.13)
 ---
+- set_fact:
+    __minon_ip_sans: |
+      {% set ip_sans = [] -%}
+      {% for hostn in groups['minon'] -%}
+        {% set pub_addr = hostvars[hostn]['publish_address'] | default(hostn) -%}
+        {% set retval = ip_sans.append('IP:' + pub_addr) -%}
+      {%- endfor %}
+      {% set retval = ip_sans.append('IP: 127.0.0.1') -%}
+      {{ ','.join(ip_sans) -}}
+        
 - name: Ensure certificate directory exists.
   file:
     path: "{{ __local_kube_cert_root }}"
@@ -29,6 +39,7 @@
     issuer:
         CN: Kubernetes APIServer Master
         O: StarStudio
+        SAN: "IP:{{ kube_apiserver_vip }}"
     ca_path: "{{ __local_kube_ca }}"
     ca_key_path: "{{ __local_kube_ca_key }}"
     crt_path: "{{ __local_kube_cert_root }}/server.crt"
@@ -38,11 +49,24 @@
 - name: Generate Kubelet Client Certificates.
   include_tasks: roles/certs/tasks/cert.yml
   vars:
-    key_path: "{{ __local_kube_client_key }}"
-    csr_path: "{{ __local_kube_client_csr }}"
-    crt_path: "{{ __local_kube_client }}"
+    key_path: "{{ __local_kubelet_client_key }}"
+    csr_path: "{{ __local_kubelet_client_csr }}"
+    crt_path: "{{ __local_kubelet_client }}"
     ca_path: "{{ __local_kube_ca }}"
     ca_key_path: "{{ __local_kube_ca_key }}"
     issuer:
-        CN: Kubernetes APIServer Kubelet Client
-        O: StarStudio
+        CN: system:node:{{ kubelet_username }}
+        O: system:nodes
+        SAN: "{{ __minon_ip_sans }}"
+
+- name: Generate Kubectl Client Certificates.
+  include_tasks: roles/certs/tasks/cert.yml
+  vars:
+    key_path: "{{ __local_kubectl_client_key }}"
+    csr_path: "{{ __local_kubectl_client_csr }}"
+    crt_path: "{{ __local_kubectl_client }}"
+    ca_path: "{{ __local_kube_ca }}"
+    ca_key_path: "{{ __local_kube_ca_key }}"
+    issuer:
+        CN: "{{ kubectl_username }}"
+        O: system:masters

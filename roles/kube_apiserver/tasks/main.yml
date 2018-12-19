@@ -1,0 +1,45 @@
+#
+#   Bootstrap Kubernetes Master
+#
+---
+- name: Install ipvsadm
+  yum:
+    name: ipvsadm
+    state: latest
+
+- name: Load Kernel IPVS Module.
+  modprobe:
+    name: ip_vs
+
+- name: Deploy default known tokens.
+  copy:
+    src: "{{ __local_kube_client_binary_root }}/known_tokens.csv"
+    dest: "{{ __kube_known_token }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Generate APIServer Keepalived Notify Script.
+  template:
+    src: apiserver-notify.sh.j2
+    dest: "{{ __kube_apiserver_keepalived_notify_script }}"
+
+- name: Generate APIServer Keepalived Check Script.
+  template:
+    src: apiserver-check.sh.j2
+    dest: "{{ __kube_apiserver_keepalived_check_script }}"
+
+- name: Generate APIServer Manifest.
+  template:
+    src: apiserver.manifest.j2
+    dest: "{{ __kubelet_manifest_root }}/apiserver.manifest"
+
+- name: Set scripts executable.
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "{{ __kube_apiserver_keepalived_notify_script }}"
+    - "{{ __kube_apiserver_keepalived_check_script }}"

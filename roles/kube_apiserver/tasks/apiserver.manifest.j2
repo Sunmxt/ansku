@@ -1,0 +1,165 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "kube-apiserver",
+    "namespace": "kube-system",
+    "annotations": {
+        "ansku-deploy-id": "{{ __kube_deploy_id }}"
+    }
+  },
+  "spec": {
+    "hostNetwork": true,
+    "containers": [
+      {
+        "name": "kube-apiserver",
+        "image": "k8s.gcr.io/kube-apiserver-amd64:v1.13.0",
+        "command": [
+          "kube-apiserver"
+          , "--advertise-address={{ hostvars[inventory_hostname]['publish_address'] | default(inventory_hostname) }}"
+          , "--etcd-cafile=/etc/etcd/tls/ca.crt"
+          , "--etcd-certfile=/etc/etcd/tls/client.crt"
+          , "--etcd-servers={{ ','.join(__etcd_client_list) }}"
+          , "--etcd-keyfile=/etc/etcd/tls/client.key"
+          , "--etcd-prefix=star-kube-container"
+          , "--cert-dir=/etc/kubernetes/tls"
+          , "--tls-cert-file=/etc/kubernetes/tls/server.crt.bundle"
+          , "--tls-private-key-file=/etc/kubernetes/tls/server.key"
+          , "--bind-address=0.0.0.0"
+          , "--token-auth-file=/etc/kubernetes/known_tokens.csv"
+          , "--authorization-mode=Node,RBAC"
+          , "--insecure-port=8080"
+          , "--service-cluster-ip-range={{ service_ip_range_cidr }}"
+          , "--v=1"
+        ],
+        "volumeMounts": [
+          {
+            "name": "etcd-ca",
+            "mountPath": "/etc/etcd/tls/ca.crt",
+            "readOnly": true
+          },
+          {
+            "name": "etcd-client-certs",
+            "mountPath": "/etc/etcd/tls",
+            "readOnly": true
+          },
+          {
+            "name": "apiserver-certs",
+            "mountPath": "/etc/kubernetes/tls",
+            "readOnly": true
+          },
+          {
+            "name": "apiserver-known-tokens",
+            "mountPath": "/etc/kubernetes/known_tokens.csv",
+            "readOnly": true
+          }
+        ],
+        "livenessProbe": {
+          "httpGet": {
+            "scheme": "HTTPS",
+            "host": "127.0.0.1",
+            "port": 6443,
+            "path": "/healthz"
+          },
+          "initialDelaySeconds": 60,
+          "timeoutSeconds": 15
+        }
+      }, 
+      {
+        "name": "kube-apiserver-keepalived", 
+        "image": "docker.io/sunmxt/keepalived:1.2",
+        "env": [
+          {
+            "name": "VIRTUAL_IP"
+            , "value": "{{ kube_apiserver_vip }}"
+          }
+          , {
+            "name": "VIRTUAL_ROUTER_ID"
+            , "value": "{{ __kube_apiserver_vrid }}"
+          }
+          , {
+            "name": "PRIORITY"
+            , "value": "{{ __kube_apiserver_vr_priority }}"
+          }
+          , {
+            "name": "INTERFACE"
+            , "value": "{{ __publish_interface_name }}"
+          }
+          , {
+            "name": "NOTIFY_SCRIPT_PATH"
+            , "value": "/etc/keepalived/apiserver-notify.sh"
+          }
+          , {
+            "name": "CHECK_SCRIPT_PATH"
+            , "value": "/etc/keepalived/apiserver-check.sh"
+          }
+          , {
+            "name": "STATE"
+            , "value": "{{ __my_kube_apiserver_ha_role | upper }}"
+          }
+        ],
+        "securityContext": {
+          "capabilities": {
+            "add": [
+              "NET_ADMIN"
+              , "NET_BROADCAST"
+              , "NET_RAW"
+            ]
+          }
+        }, 
+        "volumeMounts": [
+            {
+                "name": "keepalived-notify-script"
+                , "mountPath": "/etc/keepalived/apiserver-notify.sh"
+            }
+            , {
+                "name": "keepalived-check-script"
+                , "mountPath": "/etc/keepalived/apiserver-check.sh"
+            }
+          ]
+        }
+      ],
+    "volumes": [
+      {
+        "name": "etcd-ca",
+        "hostPath": {
+          "path": "{{ __pki_root }}/ca.crt"
+          , "type": "FileOrCreate"
+        }
+      },
+      {
+        "name": "etcd-client-certs",
+        "hostPath": {
+          "path": "{{ __etcd_cert_root }}"
+        }
+      },
+      {
+        "name": "apiserver-certs",
+        "hostPath": {
+          "path": "{{ __kube_cert_root }}"
+        }
+      },
+      {
+        "name": "apiserver-known-tokens",
+        "hostPath": {
+          "path": "{{ __kube_known_token }}"
+          , "type": "FileOrCreate"
+        }
+      },
+      {
+        "name": "keepalived-notify-script",
+        "hostPath": {
+            "path" : "{{ __kube_apiserver_keepalived_notify_script }}"
+            , "type": "File"
+        }
+      },
+      {
+        "name": "keepalived-check-script"
+        , "hostPath" : {
+            "path": "{{ __kube_apiserver_keepalived_check_script }}"
+            , "type": "File"
+        }
+      }
+    ]
+  }
+}

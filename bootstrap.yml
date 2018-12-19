@@ -1,0 +1,29 @@
+---
+- hosts: dummy
+  connection: local
+
+  roles:
+    - kube_config
+
+- hosts: master
+  become: yes
+  become_user: root
+
+  roles:
+    - kube_certs_deploy_master
+    - kube_apiserver
+
+- hosts: minon
+  become: yes
+  become_user: root
+
+  roles:
+    #- kube_certs_deploy_minon
+    - kube_minon
+
+- hosts: client
+  become: yes
+  become_user: root
+
+  roles:
+    - kube_client

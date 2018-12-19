@@ -1,0 +1,64 @@
+---
+- set_fact:
+    __meta_changed: false
+    __force_node_deploy_id: "{{ force_node_deploy_id | default('no') }}"
+
+- name: Get state of metadata.
+  stat:
+    path: "{{ __kube_deploy_meta }}"
+  register: deploy_metadata_file
+
+- name: Read metadata.
+  slurp:
+    path: "{{ __kube_deploy_meta }}"
+  when: deploy_metadata_file.stat.exists == true
+  register: deploy_metadata
+
+- name: Parse metadata.
+  set_fact:
+    __kube_deploy_metadata: |
+        {{ deploy_metadata['content'] | b64decode }}
+  when: deploy_metadata_file.stat.exists == true
+
+- name: Metadata integarity.
+  set_fact:
+    __kube_deploy_metadata: {}
+    __meta_changed: true
+  when: __kube_deploy_metadata is not defined or __kube_deploy_metadata is not mapping
+
+
+# Node Deploy ID
+- name: Load Node Deploy ID.
+  set_fact:
+    __kube_node_deploy_id: "{{ __kube_deploy_metadata.node_deploy_id }}"
+  when: __kube_deploy_metadata is defined and __kube_deploy_metadata.node_deploy_id is defined
+
+- name: Generate Node Deploy ID.
+  shell: |
+    dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64 | tr -d "=+/[:space:]" | dd bs=8 count=1 2>/dev/null > "{{ __kube_config_root }}/id.deploy.node"
+  when: __force_node_deploy_id == "yes" or __kube_node_deploy_id is not defined
+
+- name: Read Node Deploy ID.
+  slurp:
+    path: "{{ __kube_config_root }}/id.deploy.node"
+  register: __node_deploy_id
+  when: __force_node_deploy_id == "yes" or __kube_node_deploy_id is not defined
+  
+- name: Update Node deploy ID.
+  set_fact:
+    __meta_changed: true
+    __kube_node_deploy_id: "{{ __node_deploy_id['content'] | b64decode }}"
+  when: __force_node_deploy_id == "yes" or __kube_node_deploy_id is not defined
+
+# Update metadata.
+- name: Update Node Metadata
+  set_fact:
+    __kube_deploy_metadata:
+       node_deploy_id: "{{ __kube_node_deploy_id }}"
+
+- name: Update Node Metadata.
+  copy:
+    content: |
+        {{ __kube_deploy_metadata }}
+    dest: "{{ __kube_deploy_meta }}"
+  when: __meta_changed == true

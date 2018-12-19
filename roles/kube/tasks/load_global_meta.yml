@@ -1,0 +1,63 @@
+---
+- set_fact:
+    __global_meta_changed: false
+    __force_deploy_id: "{{ force_deploy_id | default('no') }}"
+
+- name: Get state of metadata.
+  stat:
+    path: "{{ __local_data_root }}/global_meta.yml"
+  register: global_deploy_metadata_file
+
+- name: Read metadata.
+  slurp:
+    path: "{{ __local_data_root }}/global_meta.yml"
+  when: global_deploy_metadata_file.stat.exists == true
+  register: global_deploy_metadata
+
+- name: Parse metadata.
+  set_fact:
+    __kube_global_deploy_metadata: |
+        {{ global_deploy_metadata['content'] | b64decode }}
+  when: global_deploy_metadata_file.stat.exists == true
+
+- name: Metadata integarity.
+  set_fact:
+    __kube_global_deploy_metadata: {}
+    __global_meta_changed: true
+  when: __kube_global_deploy_metadata is not defined or __kube_global_deploy_metadata is not mapping
+
+# Global Deploy ID
+- name: Load Global Deploy ID.
+  set_fact:
+    __kube_deploy_id: "{{ __kube_global_deploy_metadata.deploy_id }}"
+  when: __kube_global_deploy_metadata is defined and __kube_global_deploy_metadata.deploy_id is defined
+
+- name: Generate Global Deploy ID.
+  shell: |
+    dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64 | tr -d "=+/[:space:]" | dd bs=8 count=1 2>/dev/null > "{{ __local_data_root }}/id.deploy.global"
+  when: __force_deploy_id == "yes" or __kube_deploy_id is not defined
+
+- name: Read Global Deploy ID.
+  slurp:
+    path: "{{ __local_data_root }}/id.deploy.global"
+  register: __deploy_id
+  when: __force_deploy_id == "yes" or __kube_deploy_id is not defined
+  
+- name: Update deploy ID.
+  set_fact:
+    __meta_changed: true
+    __kube_deploy_id: "{{ __deploy_id['content'] | b64decode }}"
+  when: __force_deploy_id == "yes" or __kube_deploy_id is not defined
+
+# Update metadata.
+- name: Update Global Metadata.
+  set_fact:
+    __kube_global_deploy_metadata:
+        deploy_id: "{{ __kube_deploy_id }}"
+
+- name: Update Global Metadata.
+  copy:
+    content: |
+        {{ __kube_global_deploy_metadata -}}
+    dest: "{{ __local_data_root }}/global_meta.yml"
+  when: __global_meta_changed == true

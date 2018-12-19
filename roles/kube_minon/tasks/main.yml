@@ -22,12 +22,27 @@
     src: config.j2
     dest: "{{ __kubelet_systemd_config_root }}/config"
 
-#- name: Enable kubelet.
-#  systemd:
-#    name: kubelet
-#    enabled: yes
-#
-#- name: Start kubelet.
-#  service:
-#    name: kubelet
-#    state: started
+- copy:
+    src: "{{ __local_kube_client_binary_root }}/kubeconfig.kubelet"
+    dest: "{{ __kubelet_config_root }}/kubeconfig"
+    owner: root
+    group: root
+    mode: 0644
+
+- file:
+    path: "{{ __kubelet_data_root }}"
+    owner: root
+    group: root
+    mode: 0755
+    state: directory
+
+- name: Enable kubelet.
+  systemd:
+    name: kubelet
+    enabled: yes
+    daemon_reload: yes
+
+- name: Start kubelet.
+  service:
+    name: kubelet
+    state: started

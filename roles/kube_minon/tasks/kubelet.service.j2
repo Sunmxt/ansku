@@ -5,11 +5,12 @@ After=docker.service
 Requires=docker.service
 
 [Service]
-WorkingDirectory=/var/lib/kubelet
+#WorkingDirectory=/var/lib/kubelet
 #EnvironmentFile=-/etc/kubernetes/config
 #EnvironmentFile=-/etc/kubernetes/kubelet
 
 ## ansku additional start
+WorkingDirectory={{ __kubelet_data_root }}
 EnvironmentFile={{ __kubelet_systemd_config_root }}/config
 EnvironmentFile={{ __kubelet_systemd_config_root }}/kubelet
 ## ansku additional end

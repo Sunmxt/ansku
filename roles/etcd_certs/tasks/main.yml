@@ -7,15 +7,6 @@
 #       local_etcd_cert_root        Path to store etcd certificates. (default: {{ local_pki_root }}/etcd)
 #
 ---
-- set_fact:
-    __local_data_root: "{{ local_data_root | default(playbook_dir + '/deploy_cluster_data') }}"
-
-- set_fact:
-    __local_pki_root: "{{ local_pki_root | default(__local_data_root + '/tls') }}"
-
-- set_fact:
-    __local_etcd_cert_root: "{{ local_etcd_cert_root | default(__local_pki_root + '/etcd') }}"
-
 - name: Ensure etcd certs root exists.
   file:
       path: "{{ __local_etcd_cert_root }}"

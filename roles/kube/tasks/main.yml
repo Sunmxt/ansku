@@ -9,12 +9,16 @@
     __local_kube_tls: "{{ __local_kube_cert_root }}/server.crt"
     __local_kube_tls_key: "{{ __local_kube_cert_root }}/server.key"
     __local_kube_tls_csr: "{{ __local_kube_cert_root }}/server.csr"
-    __local_kube_client: "{{ __local_kube_cert_root }}/client.crt"
-    __local_kube_client_key: "{{ __local_kube_cert_root }}/client.key"
-    __local_kube_client_csr: "{{ __local_kube_cert_root }}/client.csr"
+    __local_kubelet_client: "{{ __local_kube_cert_root }}/kubelet.crt"
+    __local_kubelet_client_key: "{{ __local_kube_cert_root }}/kubelet.key"
+    __local_kubelet_client_csr: "{{ __local_kube_cert_root }}/kubelet.csr"
+    __local_kubectl_client: "{{ __local_kube_cert_root }}/kubectl.crt"
+    __local_kubectl_client_key: "{{ __local_kube_cert_root }}/kubectl.key"
+    __local_kubectl_client_csr: "{{ __local_kube_cert_root }}/kubectl.csr"
 
     __local_kube_binary_root: "{{ __local_data_root }}/bin"
     __kube_config_root: "{{ kube_config_root | default(data_root + '/kubernetes') }}"
+    __apiserver_ha_endpoint: "https://{{ kube_apiserver_vip }}:6443"
 
     apiserver_publish_list: |
       {% set endpoint_list = [] -%}
@@ -28,10 +32,30 @@
       {% set endpoint_list = [] -%}
       {% for hostn in groups['master'] -%}
         {% set pub_hostn = hostvars[hostn]['publish_address'] | default(hostn) -%}
-        {% set _d = endpoint_list.append( 'https://' + pub_hostn + ':8080') -%}
+        {% set _d = endpoint_list.append( 'https://' + pub_hostn + ':6443') -%}
       {%- endfor %}
       {{ endpoint_list -}}
-    
+
+- name: Elect APIServer HA Master.
+  set_fact: 
+    __kube_apiserver_ha_master: |
+      {% set master_inventory_hostname = "" -%}
+      {% for hostn in groups['master'] -%}
+          {% if master_inventory_hostname == "" -%}
+              {% set raw_is_backup = hostvars[hostn]['apiserver_is_backup'] | default(false) -%}
+              {% set is_backup = raw_is_backup | bool -%}
+              {% if not is_backup -%}
+                 {% set master_inventory_hostname = hostn %}
+              {%- endif %}
+          {%- endif %}
+      {%- endfor %}
+      {% if master_inventory_hostname == "" -%}
+          {% set master_inventory_hostname = groups['master'][0] %}
+      {%- endif %}
+      {{ master_inventory_hostname -}}
+  delegate_to: localhost
+  run_once: yes
+  connection: local
 
 - set_fact:
     __kube_ca: "{{ __kube_cert_root }}/ca.crt"
@@ -40,16 +64,45 @@
     __kube_tls: "{{ __kube_cert_root }}/server.crt"
     __kube_tls_key: "{{ __kube_cert_root }}/server.key"
     __kube_tls_csr: "{{ __kube_cert_root }}/server.csr"
-    __kube_client: "{{ __kube_cert_root }}/client.crt"
-    __kube_client_key: "{{ __kube_cert_root }}/client.key"
-    __kube_client_csr: "{{ __kube_cert_root }}/client.csr"
+    __kube_tls_bundle: "{{ __kube_cert_root }}/server.crt.bundle"
+    __kubelet_client: "{{ __kube_cert_root }}/kubelet.crt"
+    __kubelet_client_key: "{{ __kube_cert_root }}/kubelet.key"
+    __kubelet_client_csr: "{{ __kube_cert_root }}/kubelet.csr"
+    __kubectl_client: "{{ __kube_cert_root }}/kubectl.crt"
+    __kubectl_client_key: "{{ __kube_cert_root }}/kubectl.key"
+    __kubectl_client_csr: "{{ __kube_cert_root }}/kubectl.csr"
 
     __local_kube_client_binary_root: "{{ __local_kube_binary_root }}/client"
     __kubelet_config_root: "{{ kubelet_config_root | default(__kube_config_root + '/kubelet') }}"
 
+    __kube_deploy_meta: "{{ kube_deploy_meta_root | default(__kube_config_root + '/meta.json') }}"
+
+
 - set_fact:
     __kubelet_manifest_root: "{{ kubelet_config_root | default(__kubelet_config_root + '/manifest') }}" 
-    __kubelet_systemd_config_root: "{{ kubelet_systemd_config_root | default(__kubelet_config_root + '/systemd') }}" 
+    __kubelet_systemd_config_root: "{{ kubelet_systemd_config_root | default(__kubelet_config_root + '/systemd') }}"
+    __kubelet_script_root: "{{ kubelet_script_root | default(__kubelet_config_root + '/scripts') }}"
+
+    __kubelet_data_root: "{{ kubelet_data_root | default(__kubelet_config_root + '/data') }}"
+    __kube_known_token: "{{ __kube_config_root + '/known_tokens.csv' }}"
+
+- name: Determine APIServer Virtual Router Priority.
+  set_fact:
+    __kube_apiserver_vr_priority: 101
+    __my_kube_apiserver_ha_role: master
+  when: inventory_hostname == __kube_apiserver_ha_master
+
+- name: Determine APIServer Virtual Router Priority.
+  set_fact:
+    __kube_apiserver_vr_priority: 100
+    __my_kube_apiserver_ha_role: backup
+  when: inventory_hostname != __kube_apiserver_ha_master
+
+- set_fact:
+    __kube_apiserver_keepalived_notify_script: "{{ kube_apiserver_keepalived_notify_script | default(__kubelet_script_root + '/apiserver-keepalived-notify.sh') }}"
+    __kube_apiserver_keepalived_check_script: "{{ kube_apiserver_keepalived_notify_script | default(__kubelet_script_root + '/apiserver-keepalived-check.sh') }}"
+
+- include_tasks: roles/kube/tasks/load_deploy_meta.yml
 
 - file:
     path: "{{ item }}"
@@ -60,3 +113,4 @@
   with_items:
     - "{{ __kubelet_manifest_root }}"
     - "{{ __kubelet_systemd_config_root }}"
+    - "{{ __kubelet_script_root }}"

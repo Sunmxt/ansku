@@ -1,0 +1,61 @@
+---
+- set_fact:
+    __kube_version: "{{ kube_version | default('1.13.0') }}"
+    __local_data_root: "{{ local_data_root | default(playbook_dir + '/deploy_cluster_data') }}"
+    __pki_root: "{{ pki_root | default(data_root + '/tls') }}"
+    __service_ip_range_cidr: "{{ service_ip_range_cidr | default('10.47.0.0/16') }}"
+    __pod_ip_range_cidr: "{{ pod_ip_range_cidr | default('172.16.0.0/16') }}"
+
+    __kube_apiserver_vrid: "{{ kube_apiserver_vrid | default(78) }}"
+
+    __kubectl_username: "{{ kubectl_username | default('star-kube-admin') }}"
+    __kubelet_username: "{{ kubelet_username | default('star-kubelet') }}"
+    __kubeproxy_username: "{{ kubeproxy_username | default('star-kubeproxy') }}"
+    __kube_cluster_name: "{{ cluster_name | default('star-container-platform') }}"
+
+    __host_publish_address: "{{ hostvars[inventory_hostname]['publish_address']  | default(inventory_hostname) }}"
+
+    __etcd_client_list: |
+      {% set etcd_peers_url = [] -%}
+      {% for hostn in groups['etcd_nodes'] -%}
+          {% set pub_addr = hostvars[hostn]['publish_address'] | default(hostn) -%}
+          {%- if etcd_peers_url.append('https://' + pub_addr + ':2379') %}{%- endif %}
+      {%- endfor %}
+      {{ etcd_peers_url -}}
+
+    __publish_interface_list: |
+      {% set pub_addr = hostvars[inventory_hostname]['publish_address'] | default(inventory_hostname) -%}
+      {% set pub_ifces = [] -%}
+      {% for ifce in ansible_interfaces -%}
+          {%- set ipconf_info = hostvars[inventory_hostname]['ansible_' + ifce.replace('-','_')]['ipv4'] | default({}) -%}
+          {%- set ip = ipconf_info['address'] | default(None) -%}
+          {%- if ip != None and ip == pub_addr -%}
+              {%- set retval = pub_ifces.append(ifce) -%}
+          {%- endif -%}
+      {%- endfor -%}
+      {{ pub_ifces -}}
+
+
+- set_fact:
+    __etcd_cert_root: "{{ etcd_cert_root | default(__pki_root + '/etcd') }}"
+    __kube_cert_root: "{{ kube_cert_root | default(__pki_root + '/kubernetes') }}"
+    __local_pki_root: "{{ local_pki_root | default(__local_data_root + '/tls') }}"
+    __pod_ip_subnet_bit: |
+        {% set ip_cidr = __pod_ip_range_cidr -%}
+        {% set ip_cidr_split = ip_cidr.split('/') -%}
+        {% set netmask_count = ip_cidr_split[1] | int -%}
+        {% set netmask_addit_count = pod_ip_subnet_bit | int -%}
+        {% if netmask_count + netmask_addit_count > 32 -%}
+            {% set netmask_addit_count = 32 - netmask_count %}
+        {%- endif %}
+        {{ netmask_addit_count }}
+    __publish_interface_name: "{{ __publish_interface_list[0] | default('') }}"
+
+- name: Ensure published interface found.
+  fail:
+    msg: Cannot get published interfaces from publish address.
+  when: __publish_interface_name == ""
+
+- set_fact:
+    __local_etcd_cert_root: "{{ local_etcd_cert_root | default(__local_pki_root + '/etcd') }}"
+    __local_kube_cert_root: "{{ kube_cert_root | default(__local_pki_root + '/kubernetes') }}"

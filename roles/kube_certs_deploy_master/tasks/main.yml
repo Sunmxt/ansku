@@ -21,8 +21,8 @@
     dest: "{{ __kube_ca }}"
   - src: "{{ __local_kube_tls }}"
     dest: "{{ __kube_tls }}"
-  - src: "{{ __local_kube_client }}"
-    dest: "{{ __kube_client }}"
+  - src: "{{ __local_pki_root }}/ca.crt"
+    dest: "{{ __pki_root }}/ca.crt"
 
 
 - name: Deploy Keys.
@@ -37,5 +37,48 @@
     dest: "{{ __kube_ca_key }}"
   - src: "{{ __local_kube_tls_key }}"
     dest: "{{ __kube_tls_key }}"
-  - src: "{{ __local_kube_client_key }}"
-    dest: "{{ __kube_client_key }}"
+  - src: "{{ __local_pki_root }}/ca.key"
+    dest: "{{ __pki_root }}/ca.key"
+
+- name: Load APIServer TLS Certificate.
+  slurp:
+    path: "{{ __kube_tls }}"
+  register: __apiserver_tls_cert
+
+- name: Load APIServer TLS CA.
+  slurp:
+    path: "{{ __kube_ca }}"
+  register: __apiserver_tls_ca
+
+- name: Generate APIServer TLS Bundle.
+  copy:
+    content: |
+        {{ __apiserver_tls_cert['content'] | b64decode }}
+        {{ __apiserver_tls_ca['content'] | b64decode  }}
+    dest: "{{ __kube_tls_bundle }}"
+
+- name: Setup etcd Client Certificates.
+  include_tasks: roles/certs/tasks/cert.yml
+  vars:
+      issuer:
+          O: Starstudio APP Platform ETCD Client
+          CN: client.etcd.starapp.com
+          SAN: |
+            {% set ip_sans = [] -%}
+            {% set retval = ip_sans.append('IP:127.0.0.1') -%}
+            {% set retval = ip_sans.append('IP:' + inventory_hostname) -%}
+            {% if hostvars[inventory_hostname]['publish_address'] is defined -%}
+                {% set retval = ip_sans.append('IP:' + hostvars[inventory_hostname]['publish_address']) -%}
+            {%- endif %}
+            {{ ','.join(ip_sans) -}}
+
+      ca_path: "{{ __pki_root }}/ca.crt"
+      ca_key_path: "{{ __pki_root }}/ca.key"
+      key_path: "{{ __etcd_cert_root }}/client.key"
+      csr_path: "{{ __etcd_cert_root }}/client.csr"
+      crt_path: "{{ __etcd_cert_root }}/client.crt"
+
+- name: Remove ETCD CA Key.
+  file:  
+    path: "{{ __pki_root }}/ca.key"
+    state: absent

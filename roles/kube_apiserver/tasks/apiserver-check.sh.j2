@@ -1,0 +1,11 @@
+#! /bin/sh
+
+apiserver_health_state=$(curl -L https://{{ __host_publish_address }}:6443/healthz --insecure 2>/dev/null)
+if ! [ "$apiserver_health_state"=="ok" ]; then
+    echo "APIServer state: Unhealthy."
+    exit 1
+fi
+
+echo "APIServer state: Healthy."
+
+exit 0
