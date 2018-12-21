@@ -1,3 +1,5 @@
 {{ __kubelet_user_token }},system:node:{{ __kubelet_username }},{{ __kubelet_user_uid }},{{ __kubelet_user_group }}
 {{ __kubeproxy_user_token }},{{ __kubeproxy_username }},{{ __kubeproxy_user_uid }},{{ __kubeproxy_user_group }}
+{{ __kube_scheduler_user_token }},system:kube-scheduler,{{ __kube_scheduler_user_uid }},{{ __kube_scheduler_user_group }}
+{{ __kube_controller_manager_user_token }},system:kube-controller-manager,{{ __kube_controller_manager_user_uid }},{{ __kube_controller_manager_user_group }}
 {{ __kubectl_user_token }},{{ __kubectl_username }},{{ __kubectl_user_uid }},{{ __kubectl_user_group }}

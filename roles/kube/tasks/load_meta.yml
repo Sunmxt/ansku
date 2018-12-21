@@ -1,7 +1,7 @@
 ---
 - set_fact:
     __meta_changed: false
-    __force_node_deploy_id: "{{ force_node_deploy_id | default('no') }}"
+    __force_node_deploy_id: "{{ force_node_deploy_id | default(false) }}"
 
 - name: Get state of metadata.
   stat:
@@ -26,6 +26,23 @@
     __meta_changed: true
   when: __kube_deploy_metadata is not defined or __kube_deploy_metadata is not mapping
 
+# Virtual Node Name
+- name: Load Virtual Host Name.
+  set_fact:
+    __kube_virtual_host_name: "{{ __kube_deploy_metadata.virtual_host_name }}"
+  when: __kube_deploy_metadata is defined and __kube_deploy_metadata.virtual_host_name is defined
+
+- name: New Virtual Host Name.
+  set_fact:
+    __meta_changed: true
+    __kube_virtual_host_name: "kube-node-{{ '%x' % (range(0,4294967295) | random) }}"
+  when: __kube_virtual_host_name is not defined
+
+- name: Change Virtual Host Name.
+  set_fact:
+    __meta_changed: true
+    __kube_virtual_host_name: "{{ kube_virtual_hostname }}"
+  when: kube_virtual_hostname is defined and kube_virtual_hostname != __kube_virtual_host_name
 
 # Node Deploy ID
 - name: Load Node Deploy ID.
@@ -36,25 +53,26 @@
 - name: Generate Node Deploy ID.
   shell: |
     dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64 | tr -d "=+/[:space:]" | dd bs=8 count=1 2>/dev/null > "{{ __kube_config_root }}/id.deploy.node"
-  when: __force_node_deploy_id == "yes" or __kube_node_deploy_id is not defined
+  when: __force_node_deploy_id == true or __kube_node_deploy_id is not defined
 
 - name: Read Node Deploy ID.
   slurp:
     path: "{{ __kube_config_root }}/id.deploy.node"
   register: __node_deploy_id
-  when: __force_node_deploy_id == "yes" or __kube_node_deploy_id is not defined
+  when: __force_node_deploy_id == true or __kube_node_deploy_id is not defined
   
 - name: Update Node deploy ID.
   set_fact:
     __meta_changed: true
     __kube_node_deploy_id: "{{ __node_deploy_id['content'] | b64decode }}"
-  when: __force_node_deploy_id == "yes" or __kube_node_deploy_id is not defined
+  when: __force_node_deploy_id == true or __kube_node_deploy_id is not defined
 
 # Update metadata.
 - name: Update Node Metadata
   set_fact:
     __kube_deploy_metadata:
        node_deploy_id: "{{ __kube_node_deploy_id }}"
+       virtual_host_name: "{{ __kube_virtual_host_name }}"
 
 - name: Update Node Metadata.
   copy:

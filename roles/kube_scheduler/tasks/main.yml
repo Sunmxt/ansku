@@ -1,0 +1,16 @@
+#
+#   Bootstrap Kubernetes Master
+#
+---
+- name: Generate Kubernetes Scheduler Manifest.
+  template:
+    src: kube-scheduler.manifest.j2
+    dest: "{{ __kubelet_manifest_root }}/kube-scheduler.manifest"
+
+- name: Deploy kubeconfig for Kubernetes Scheduler.
+  copy:
+    src: "{{ __local_kube_client_binary_root }}/kubeconfig.scheduler"
+    dest: "{{ __kubelet_config_root }}/kubeconfig.scheduler"
+    owner: root
+    group: root
+    mode: 0644

@@ -12,15 +12,18 @@
 
 - template:
     src: kubelet.service.j2
-    dest: "/usr/lib/systemd/system/kubelet.service" 
+    dest: "/usr/lib/systemd/system/kubelet.service"
+  register: template_svc_systemd
 
 - template:
     src: kubelet.j2
     dest: "{{ __kubelet_systemd_config_root }}/kubelet"
+  register: template_env_kubelet
 
 - template:
     src: config.j2
     dest: "{{ __kubelet_systemd_config_root }}/config"
+  register: template_env_kube
 
 - copy:
     src: "{{ __local_kube_client_binary_root }}/kubeconfig.kubelet"
@@ -28,6 +31,7 @@
     owner: root
     group: root
     mode: 0644
+  register: kubeconfig_kubelet
 
 - file:
     path: "{{ __kubelet_data_root }}"
@@ -41,6 +45,12 @@
     name: kubelet
     enabled: yes
     daemon_reload: yes
+
+- name: Stop Kubelet.
+  service:
+    name: kubelet
+    state: stopped
+  when: template_svc_systemd.changed or template_env_kubelet.changed or template_env_kube.changed or kubeconfig_kubelet.changed
 
 - name: Start kubelet.
   service:

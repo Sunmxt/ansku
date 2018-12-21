@@ -1,0 +1,77 @@
+{
+  "kind": "Pod"
+  , "apiVersion": "v1"
+  , "metadata": {
+    "name": "kube-controller-manager"
+    , "namespace": "kube-system"
+    , "annotations": {
+        "ansku-deploy-id": "{{ __kube_deploy_id }}"
+        , "ansku-node-deploy-id": "{{ __kube_node_deploy_id }}"
+    }
+  }
+  , "spec": {
+    "hostNetwork": true
+    , "containers": [
+      {
+        "name": "kube-controller-manager"
+        , "image": "k8s.gcr.io/kube-controller-manager:v{{ __kube_version }}"
+        , "command": [
+           "kube-controller-manager"
+           , "--allocate-node-cidrs=true"
+           , "--cluster-cidr={{ __pod_ip_range_cidr }}"
+           , "--cluster-name={{ __kube_cluster_name }}"
+           , "--controllers=*"
+           , "--leader-elect=true"
+           , "--bind-address={{ __host_publish_address }}"
+           , "--secure-port=10257"
+           , "--tls-cert-file=/etc/kubernetes/tls/server.crt.bundle"
+           , "--tls-private-key-file=/etc/kubernetes/tls/server.key"
+           , "--kubeconfig=/etc/kubernetes/kubeconfig.controller.manager"
+           , "--cluster-signing-cert-file=/etc/kubernetes/tls/ca.crt"
+           , "--cluster-signing-key-file=/etc/kubernetes/tls/ca.key"
+           , "--service-cluster-ip-range={{ __service_ip_range_cidr }}"
+           , "--node-cidr-mask-size=24"
+           , "--leader-elect=true"
+           , "--service-account-private-key-file=/etc/kubernetes/tls/server.key"
+           , "--root-ca-file=/etc/kubernetes/tls/ca.crt"
+           , "--use-service-account-credentials=true"
+           , "--v=4"
+        ]
+        , "ports": [
+          {
+            "name": "health"
+            , "hostPort": 10257
+            , "containerPort": 10257
+          }  
+        ]
+        , "volumeMounts": [
+          {
+            "name": "kube-controller-manager-kubeconfig"
+            , "mountPath": "/etc/kubernetes/kubeconfig.controller.manager"
+          }
+          , {
+            "name": "kubernetes-tls"
+            , "mountPath": "/etc/kubernetes/tls/"
+            , "readOnly": true
+          }
+        ]
+      }
+    ]
+    , "volumes": [
+      {
+        "name": "kube-controller-manager-kubeconfig"
+        , "hostPath": {
+            "path": "{{ __kubelet_config_root }}/kubeconfig.controller.manager"
+            , "type": "File"
+        }
+      }
+      , {
+        "name": "kubernetes-tls"
+        , "hostPath": {
+            "path": "{{ __kube_cert_root }}"
+            , "type": "Directory"
+        }
+      }
+    ]
+  }
+}

@@ -5,6 +5,13 @@
   roles:
     - kube_config
 
+- hosts: nodes
+  become: yes
+  become_user: root
+
+  roles:
+    - kube_vhost
+
 - hosts: master
   become: yes
   become_user: root
@@ -12,6 +19,8 @@
   roles:
     - kube_certs_deploy_master
     - kube_apiserver
+    - kube_controller_manager
+    - kube_scheduler
 
 - hosts: minon
   become: yes

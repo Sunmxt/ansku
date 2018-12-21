@@ -15,6 +15,12 @@
     __local_kubectl_client: "{{ __local_kube_cert_root }}/kubectl.crt"
     __local_kubectl_client_key: "{{ __local_kube_cert_root }}/kubectl.key"
     __local_kubectl_client_csr: "{{ __local_kube_cert_root }}/kubectl.csr"
+    __local_kube_scheduler: "{{ __local_kube_cert_root }}/kube-scheduler.crt"
+    __local_kube_scheduler_key: "{{ __local_kube_cert_root }}/kube-scheduler.key"
+    __local_kube_scheduler_csr: "{{ __local_kube_cert_root }}/kube-scheduler.csr"
+    __local_kube_controller_manager: "{{ __local_kube_cert_root }}/kube-controller-manager.crt"
+    __local_kube_controller_manager_key: "{{ __local_kube_cert_root }}/kube-controller-manager.key"
+    __local_kube_controller_manager_csr: "{{ __local_kube_cert_root }}/kube-controller-manager.csr"
 
     __local_kube_binary_root: "{{ __local_data_root }}/bin"
     __kube_config_root: "{{ kube_config_root | default(data_root + '/kubernetes') }}"
@@ -71,6 +77,12 @@
     __kubectl_client: "{{ __kube_cert_root }}/kubectl.crt"
     __kubectl_client_key: "{{ __kube_cert_root }}/kubectl.key"
     __kubectl_client_csr: "{{ __kube_cert_root }}/kubectl.csr"
+    __kube_scheduler: "{{ __kube_cert_root }}/kube-scheduler.crt"
+    __kube_scheduler_key: "{{ __kube_cert_root }}/kube-scheduler.key"
+    __kube_scheduler_csr: "{{ __kube_cert_root }}/kube-scheduler.csr"
+    __kube_controller_manager: "{{ __kube_cert_root }}/kube-controller-manager.crt"
+    __kube_controller_manager_key: "{{ __kube_cert_root }}/kube-controller-manager.key"
+    __kube_controller_manager_csr: "{{ __kube_cert_root }}/kube-controller-manager.csr"
 
     __local_kube_client_binary_root: "{{ __local_kube_binary_root }}/client"
     __kubelet_config_root: "{{ kubelet_config_root | default(__kube_config_root + '/kubelet') }}"
@@ -102,7 +114,6 @@
     __kube_apiserver_keepalived_notify_script: "{{ kube_apiserver_keepalived_notify_script | default(__kubelet_script_root + '/apiserver-keepalived-notify.sh') }}"
     __kube_apiserver_keepalived_check_script: "{{ kube_apiserver_keepalived_notify_script | default(__kubelet_script_root + '/apiserver-keepalived-check.sh') }}"
 
-- include_tasks: roles/kube/tasks/load_deploy_meta.yml
 
 - file:
     path: "{{ item }}"
@@ -114,3 +125,5 @@
     - "{{ __kubelet_manifest_root }}"
     - "{{ __kubelet_systemd_config_root }}"
     - "{{ __kubelet_script_root }}"
+
+- include_tasks: roles/kube/tasks/load_deploy_meta.yml

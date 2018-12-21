@@ -1,0 +1,67 @@
+{
+  "kind": "Pod"
+  , "apiVersion": "v1"
+  , "metadata": {
+    "name": "kube-scheduler"
+    , "namespace": "kube-system"
+    , "annotations": {
+        "ansku-deploy-id": "{{ __kube_deploy_id }}"
+        , "ansku-node-deploy-id": "{{ __kube_node_deploy_id }}"
+    }
+  }
+  , "spec": {
+    "hostNetwork": true
+    , "containers": [
+      {
+        "name": "kube-scheduler"
+        , "image": "k8s.gcr.io/kube-scheduler:v{{ __kube_version }}"
+        , "command": [
+           "kube-scheduler"
+           , "--bind-address={{ __host_publish_address }}"
+           , "--cert-dir=/etc/kubernetes/tls"
+           , "--secure-port=10259"
+           , "--tls-cert-file=/etc/kubernetes/tls/server.crt.bundle"
+           , "--tls-private-key-file=/etc/kubernetes/tls/server.key"
+           , "--kubeconfig=/etc/kubernetes/kubeconfig.kube.scheduler"
+           , "--authorization-kubeconfig=/etc/kubernetes/kubeconfig.kube.scheduler"
+           , "--leader-elect=true"
+           , "--v=1"
+        ]
+        , "ports": [
+          {
+            "name": "health"
+            , "hostPort": 10259
+            , "containerPort": 10259
+          }  
+        ]
+        , "volumeMounts": [
+          {
+            "name": "kube-scheduler-kubeconfig"
+            , "mountPath": "/etc/kubernetes/kubeconfig.kube.scheduler"
+          }
+          , {
+            "name": "kubernetes-tls"
+            , "mountPath": "/etc/kubernetes/tls/"
+            , "readOnly": true
+          }
+        ]
+      }
+    ]
+    , "volumes": [
+      {
+        "name": "kube-scheduler-kubeconfig"
+        , "hostPath": {
+            "path": "{{ __kubelet_config_root }}/kubeconfig.scheduler"
+            , "type": "File"
+        }
+      }
+      , {
+        "name": "kubernetes-tls"
+        , "hostPath": {
+            "path": "{{ __kube_cert_root }}"
+            , "type": "Directory"
+        }
+      }
+    ]
+  }
+}

@@ -21,6 +21,10 @@
     dest: "{{ __kube_ca }}"
   - src: "{{ __local_kube_tls }}"
     dest: "{{ __kube_tls }}"
+  - src: "{{ __local_kube_scheduler }}"
+    dest: "{{ __kube_scheduler }}"
+  - src: "{{ __local_kube_controller_manager }}"
+    dest: "{{ __kube_controller_manager }}"
   - src: "{{ __local_pki_root }}/ca.crt"
     dest: "{{ __pki_root }}/ca.crt"
 
@@ -39,6 +43,10 @@
     dest: "{{ __kube_tls_key }}"
   - src: "{{ __local_pki_root }}/ca.key"
     dest: "{{ __pki_root }}/ca.key"
+  - src: "{{ __local_kube_scheduler_key }}"
+    dest: "{{ __kube_scheduler_key }}"
+  - src: "{{ __local_kube_controller_manager_key }}"
+    dest: "{{ __kube_controller_manager_key }}"
 
 - name: Load APIServer TLS Certificate.
   slurp:

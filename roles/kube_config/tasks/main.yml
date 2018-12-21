@@ -9,6 +9,12 @@
 - name: Generate kubeconfig for kubelet
   include_tasks: roles/kube_config/tasks/kubelet.yml
 
+- name: Generate kubeconfig for kube-controller-manager.
+  include_tasks: roles/kube_config/tasks/kube-controller-manager.yml
+
+- name: Generate kubeconfig for kube-scheduler.
+  include_tasks: roles/kube_config/tasks/kube-scheduler.yml
+
 #- name: Generate kubeconfig for kubeproxy 
 #  include_tasks: roles/kube_config/tasks/kubeproxy.yml
 

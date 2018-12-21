@@ -15,6 +15,16 @@
       {%- endfor %}
       {% set retval = ip_sans.append('IP: 127.0.0.1') -%}
       {{ ','.join(ip_sans) -}}
+
+    __master_ip_sans: |
+      {% set ip_sans = [] -%}
+      {% for hostn in groups['master'] -%}
+        {% set pub_addr = hostvars[hostn]['publish_address'] | default(hostn) %}
+        {% set retval = ip_sans.append('IP:' + pub_addr) %}
+      {%- endfor %}
+      {% set retval = ip_sans.append('IP: 127.0.0.1') -%}
+      {{ ','.join(ip_sans) }}
+        
         
 - name: Ensure certificate directory exists.
   file:
@@ -58,6 +68,33 @@
         CN: system:node:{{ kubelet_username }}
         O: system:nodes
         SAN: "{{ __minon_ip_sans }}"
+
+- name: Generate Kubernetes Scheduler Certificates.
+  include_tasks: roles/certs/tasks/cert.yml
+  vars:
+    key_path: "{{ __local_kube_scheduler_key }}"
+    csr_path: "{{ __local_kube_scheduler_csr }}"
+    crt_path: "{{ __local_kube_scheduler }}"
+    ca_path: "{{ __local_kube_ca }}"
+    ca_key_path: "{{ __local_kube_ca_key }}"
+    issuer:
+        CN: system:kube-scheduler
+        O: system
+        #SAN: "{{ __master_ip_sans }}"
+     
+
+- name: Generate Kubernetes Controller Manager Certificates.
+  include_tasks: roles/certs/tasks/cert.yml
+  vars:
+    key_path: "{{ __local_kube_controller_manager_key }}"
+    csr_path: "{{ __local_kube_controller_manager_csr }}"
+    crt_path: "{{ __local_kube_controller_manager }}"
+    ca_path: "{{ __local_kube_ca }}"
+    ca_key_path: "{{ __local_kube_ca_key }}"
+    issuer:
+        CN: system:kube-controller-manager
+        O: system
+        #SAN: "{{ __master_ip_sans }}"
 
 - name: Generate Kubectl Client Certificates.
   include_tasks: roles/certs/tasks/cert.yml

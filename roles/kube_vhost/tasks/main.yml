@@ -1,0 +1,45 @@
+---
+- name: Generate IP Mapping of Virtual Hostname 
+  set_fact:
+    __kube_map_virtual_host_name: |
+      {% set map_vhn = [] -%}
+      {% for hostn in groups['nodes'] -%}
+        {% set this_vhost = hostvars[hostn]['__kube_virtual_host_name'] -%}
+        {% set vhost_ip = hostvars[hostn]['publish_address'] | default(hostn) -%}
+        {% set retval = map_vhn.append({'vhost': this_vhost, 'ip': vhost_ip}) %}
+      {%- endfor %}
+      {{ map_vhn -}}
+
+- name: Check Virtual Host IPs.
+  set_fact:
+    __kube_virtual_host_name_corrected: |
+      {% set correct = true %}
+      {% for item in __kube_map_virtual_host_name -%}
+        {% set is_ipaddr = item.ip | ipaddr -%}
+        {% if is_ipaddr == false -%}
+          {% set correct = false -%}
+        {%- endif %}
+      {%- endfor %}
+      {{ correct -}}
+
+- name: Incorrect IP.
+  fail:
+    msg: Incorrent IP address detected. Check publish_address and hostname in inventory.
+  when: __kube_virtual_host_name_corrected == false
+
+- name: Configure Hosts.
+  blockinfile:
+    content: |
+      {% for item in __kube_map_virtual_host_name %}
+        {{- item.ip }} {{ item.vhost }}
+      {% endfor %}
+    path: /etc/hosts
+    marker: "# {mark} ANSKU MANAGED VHOST BLOCK FOR KUBE CLUSTER"
+
+- name: Deploy Virtual Host Mapping.
+  copy:
+    content: "{{ __kube_map_virtual_host_name }}"
+    dest: "{{ __kube_config_root }}/virtual_hosts.json"
+    owner: root
+    group: root
+    mode: 0644
